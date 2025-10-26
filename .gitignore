@@ -1,1 +1,5 @@
+# Sensitive Data
 .env
+
+# Extra shit no one needs
+__pycache__/
