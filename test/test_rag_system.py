@@ -206,13 +206,13 @@ def test_rag_pipeline_workflow():
         print(f"  - Embeddings shape: {len(result['embeddings'])} x {len(result['embeddings'][0])}")
         
         # Step 4: Check pipeline stats
-        stats = pipeline.get_stats()
+        stats = pipeline.getStats()
         print(f"✓ Pipeline stats:")
         print(f"  - Total documents: {stats['total_documents']}")
         print(f"  - Total chunks: {stats['total_chunks']}")
         
         # Step 5: List documents
-        docs = pipeline.list_documents()
+        docs = pipeline.listDocuments()
         print(f"✓ Documents in pipeline: {docs}")
         
         # Step 6: Query the pipeline
@@ -225,7 +225,12 @@ def test_rag_pipeline_workflow():
         print("-" * 80)
         print(context_prompt[:2500] + "..." if len(context_prompt) > 2500 else context_prompt)
         print("-" * 80)
-        
+
+        # Step 7: Query the API using the entire pipeline
+        response = pipeline.queryWithContext(query, n_results=2)
+        print(f"✓ Received response from LLM:")
+        print(f" Response preview: {response[:2500] + "..." if len(response) > 2500 else response}")
+
         # Step 7: Verify results
         assert stats['total_documents'] == 1, "Should have 1 document"
         assert stats['total_chunks'] > 0, "Should have chunks"

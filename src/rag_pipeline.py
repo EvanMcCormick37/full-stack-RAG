@@ -6,6 +6,7 @@ from sentence_transformers import SentenceTransformer
 import chromadb
 from dotenv import load_dotenv
 from src.document_processor import DocumentProcessor
+from src.llm_client import LLMClient
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -47,6 +48,13 @@ class RAGPipeline:
                 overlap_size = self._overlap_size,
                 embedding_model = self._embedding_model_name
             )
+        
+        self._llm_client = LLMClient(
+            api_key=os.getenv("GEMINI_API_KEY"),
+            model_name=os.getenv("LLM_MODEL", "gemini-2.0-flash"),
+            max_retries=int(os.getenv("LLM_MAX_RETRIES", 5)),
+            max_delay=int(os.getenv("LLM_MAX_DELAY", 60)),
+        )
         
         self._client = chromadb.PersistentClient(
             path=self._persist_directory
@@ -130,7 +138,32 @@ class RAGPipeline:
 
         return context_prompt
 
-    def list_documents(self) -> List[str]:
+    def queryWithContext(
+            self,
+            query_text: str,
+            n_results: int = 5,
+            where: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """
+        Query the LLM with added context from the vector store.
+
+        Args:
+            query_text: The input query string.
+            n_results: Number of top similar documents to retrieve.
+            where: Optional metadata filter for the search.
+        Returns:
+            response: str, The LLM's response text.
+        """
+        context_prompt = self.getContext(
+            query_text=query_text,
+            n_results=n_results,
+            where=where
+        )
+
+        response = self._llm_client.query(context_prompt)
+
+        return response
+    def listDocuments(self) -> List[str]:
         """
         Get a list of unique document sources in the vector store.
         
@@ -149,7 +182,7 @@ class RAGPipeline:
         
         return sorted(list(sources))
     
-    def get_stats(self) -> Dict[str, Any]:
+    def getStats(self) -> Dict[str, Any]:
         """
         Get statistics about the RAG pipeline.
         
@@ -158,7 +191,7 @@ class RAGPipeline:
         """
         return {
             'total_chunks': self._collection.count(),
-            'total_documents': len(self.list_documents()),
+            'total_documents': len(self.listDocuments()),
             'collection_name': self._collection_name,
             'persist_directory': self._persist_directory,
             'embedding_config': {
@@ -174,12 +207,12 @@ class RAGPipeline:
         
         Warning: This is irreversible!
         """
-        self._collection.reset()
+        self._collection.delete()
         logger.info("Vector store has been reset")
     
     def __repr__(self) -> str:
         """String representation of RAGPipeline."""
-        stats = self.get_stats()
+        stats = self.getStats()
         return (
             f"RAGPipeline(documents={stats['total_documents']}, "
             f"chunks={stats['total_chunks']}, "
