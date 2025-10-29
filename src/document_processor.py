@@ -15,7 +15,12 @@ class DocumentProcessor:
 
     SUPPORTED_FORMATS = {'pdf', 'doc', 'docx', 'txt'}
     
-    def __init__(self, chunk_size=500, overlap_size=50, embedding_model="all-MiniLM-L6-v2"):
+    def __init__(
+        self,
+        chunk_size: int,
+        overlap_size: int,
+        embedding_model: str
+    ):
         self._chunk_size = chunk_size
         self._overlap_size = overlap_size
         self._embedding_model = embedding_model
@@ -38,7 +43,15 @@ class DocumentProcessor:
                 doc = DocxDocument(document)
                 text = '\n'.join(para.text for para in doc.paragraphs)
             elif file_type == 'txt':
-                text = document.decode('utf-8')
+                for encoding in ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']:
+                    try:
+                        text = document.decode(encoding)
+                        break
+                    except UnicodeDecodeError:
+                        continue
+                else:
+                    # Fallback with error handling
+                    text = document.decode('utf-8', errors='replace')
             else:
                 raise ValueError(f"Unsupported file type: {file_type}")
         else:
@@ -52,8 +65,18 @@ class DocumentProcessor:
                 doc = DocxDocument(file_path)
                 text = '\n'.join(para.text for para in doc.paragraphs)
             elif file_type == 'txt':
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    text = f.read()
+                # Try multiple encodings
+                for encoding in ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']:
+                    try:
+                        with open(file_path, 'r', encoding=encoding) as f:
+                            text = f.read()
+                        break
+                    except UnicodeDecodeError:
+                        continue
+                else:
+                    # Fallback with error handling
+                    with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+                        text = f.read()
             else:
                 raise ValueError(f"Unsupported file type: {file_type}")
         return text
@@ -121,7 +144,7 @@ class DocumentProcessor:
         stat_info = file_path.stat()
 
         metadata = {
-            'filename': file_path.name,
+            'source': file_path.name,
             'filetype': file_path.suffix.lower(),
             'date_ingested': datetime.now().isoformat()
         }
@@ -159,7 +182,6 @@ class DocumentProcessor:
     def process_document(
             self,
             document: Union[str, Path],
-            generate_embeddings: bool = True
         ) -> Dict[str, Any]:
         # Full processing pipeline
         logger.info(f"Processing document: {document}")
@@ -175,8 +197,8 @@ class DocumentProcessor:
             if not chunks:
                 raise ValueError("No chunks were created from the document text.")
 
-            if generate_embeddings:
-                embeddings = self.embed_text(chunks)
+            
+            embeddings = self.embed_text(chunks)
 
             metadata['num_chunks'] = len(chunks)
 
@@ -184,7 +206,7 @@ class DocumentProcessor:
                 'metadata': metadata,
                 'text': text,
                 'chunks': chunks,
-                'embeddings': embeddings if generate_embeddings else None
+                'embeddings': embeddings
             }
 
             logger.info(f"Document processing complete: {document}: {len(chunks)} chunks created.")
