@@ -128,10 +128,10 @@ class RAGPipeline:
         sources = [metadata['source'] for metadata in results['metadatas'][0]]
 
         context = ",\n".join(
-            [f"Document {i+1}: {doc}\nSource: {src}" for i, (doc, src) in enumerate(zip(documents, sources))]
+            [f"{doc}\n(Source: {src})" for (doc, src) in zip(documents, sources)]
             )
         context_prompt = (
-            f"Answer the user's question, using the provided context to augment your existing knowledge. Trust the provided context over raw intuition. Cite the sources of the context documents you use. \n\nContext:\n{context},\n\nQuestion: {query_text}"
+            f"Answer the user's question, using the provided context to augment your existing knowledge. Trust the provided context over raw intuition. Cite the source of the context you use. \n\nContext:\n{context},\n\nQuestion: {query_text}"
             )
 
         logger.info(f"Query returned {len(results['documents'])} documents.")

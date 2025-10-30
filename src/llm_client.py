@@ -1,4 +1,6 @@
 from typing import Any, List, Dict, Optional
+import hashlib
+from collections import OrderedDict
 import google.generativeai as genai
 import time
 import random
@@ -10,6 +12,7 @@ class LLMClient:
             model_name: str,
             max_retries: int,
             max_delay: int,
+            cache_enabled: bool = True,
             ):
         
         self._api_key = api_key
@@ -17,6 +20,9 @@ class LLMClient:
         self._model = self.initialize_model()
         self._max_retries = max_retries
         self._delay = max_delay
+        self._cache_enabled = cache_enabled
+        self._max_cache_size = 100
+        self._cache: OrderedDict[str, str] = OrderedDict()
 
 
     def initialize_model(self):
@@ -73,6 +79,19 @@ class LLMClient:
             self,
             prompt: str,
             ) -> str:
+        
         self._validate_prompt(prompt)
+
+        if self._cache_enabled:
+            prompt_hash = hashlib.sha256(prompt.encode('utf-8')).hexdigest()
+            if prompt_hash in self._cache:
+                return self._cache[prompt_hash]
+        
         response_text = self._call_with_exponential_backoff(prompt)
+
+        if self._cache_enabled:
+            if len(self._cache) >= self._max_cache_size:
+                self._cache.popitem(last=False)
+            self._cache[prompt_hash] = response_text
+        
         return response_text

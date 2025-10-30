@@ -226,12 +226,20 @@ def test_rag_pipeline_workflow():
         print(context_prompt[:2500] + "..." if len(context_prompt) > 2500 else context_prompt)
         print("-" * 80)
 
-        # Step 7: Query the API using the entire pipeline
-        response = pipeline.queryWithContext(query, n_results=2)
+        # Step 7: Query the API using the context prompt
+        print(f"\nQuerying LLM with context prompt...")
+        response = pipeline._llm_client.query(context_prompt)
         print(f"✓ Received response from LLM:")
-        print(f" Response preview: {response[:2500] + "..." if len(response) > 2500 else response}")
+        print(f"Response preview: {response[:2500] + "..." if len(response) > 2500 else response}")
+
+        print("Retrying the same query to test response caching...")
+        # Step 8: Test caching by querying the same prompt again
+        response2 = pipeline._llm_client.query(context_prompt)
+        print(f"✓ Received response from LLM:")
+        print(f"Cached Response preview: {response[:2500] + "..." if len(response) > 2500 else response}")
 
         # Step 7: Verify results
+        assert response == response2, "Cached response should match"
         assert stats['total_documents'] == 1, "Should have 1 document"
         assert stats['total_chunks'] > 0, "Should have chunks"
         assert "sample_document.txt" in docs, "Document should be listed"
