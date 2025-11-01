@@ -17,8 +17,11 @@ class RAGPipeline:
             chunk_size: Optional[int] = None,
             overlap_size: Optional[int] = None,
             embedding_model: Optional[str] = None,
-            collection_name: str = "documents",
+            llm_model: Optional[str] = None,
+            n_results: Optional[int] = None,
             persist_directory: Optional[str] = None,
+            collection_name: str = "documents",
+            context_prompt: str = "simple"
     ):
         """
         Initialize the RAG Pipeline
@@ -38,10 +41,20 @@ class RAGPipeline:
         logger.info("Initializing RAG Pipeline...")
 
         self._embedding_model_name = embedding_model if embedding_model else os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+        self._embedding_model = SentenceTransformer(self._embedding_model_name)
         self._chunk_size = chunk_size if chunk_size else int(os.getenv("CHUNK_SIZE", 500))
         self._overlap_size = overlap_size if overlap_size else int(os.getenv("OVERLAP_SIZE", 50))
         self._persist_directory = persist_directory if persist_directory else os.getenv("VECTOR_STORE", None)
         self._collection_name = collection_name
+        self._n_results = n_results if n_results else int(os.getenv("VECTOR_SEARCH_N_RESULTS",5))
+        self._llm_model = llm_model if llm_model else os.getenv("LLM_MODEL", "gemini-2.0-flash")
+        self._api_key = os.getenv("GEMINI_API_KEY")
+        self._context_prompts = {
+            "distracted": "Acknowledge the user's question, but then relate it to the provided context. Shift the discussion towards the information contained in the context documents, which you find endlessly fascinating. Do not cite the context or mention that you are referring to texts. These are your own ideas that you're excited to share. \n\nContext:\n{context},\n\nQuestion: {query_text}",
+            "simple":"Answer the users question using the provided context. Question: {query_text}\nContext: {context}",
+            "scholar": "You are a knowledgeable professor, and an expert in the field. Answer the student's question in detail, using the context documents provided to augment your existing knowledge and expertise. Cite the sources you use when appropriate. \n\nContext:\n{context},\n\nQuestion: {query_text}",
+        }
+        self._context_prompt = self._context_prompts[context_prompt]
 
         self._document_processor = DocumentProcessor(
                 chunk_size = self._chunk_size,
@@ -50,8 +63,8 @@ class RAGPipeline:
             )
         
         self._llm_client = LLMClient(
-            api_key=os.getenv("GEMINI_API_KEY"),
-            model_name=os.getenv("LLM_MODEL", "gemini-2.0-flash"),
+            api_key= self._api_key,
+            model_name= self._llm_model,
             max_retries=int(os.getenv("LLM_MAX_RETRIES", 5)),
             max_delay=int(os.getenv("LLM_MAX_DELAY", 60)),
         )
@@ -65,6 +78,16 @@ class RAGPipeline:
         )
         
         logger.info("RAG Pipeline initialized successfully.")
+
+
+    def setContextPrompt(
+            self,
+            setting: str) -> None:
+        try:
+            self._context_prompt = self._context_prompts[setting]
+        except Exception as e:
+            print(f"Error setting context prompt {e}.")
+
 
     def ingestDocument(
             self,
@@ -96,9 +119,34 @@ class RAGPipeline:
 
         return processed
     
+    def ingestDocuments(
+            self,
+            documents: List[Union[str, Path]]
+    ) -> Dict[str, Any] :
+        # TODO: Add tests in test file and implement in CLI.
+        results = []
+        num_chunks = 0
+        for doc in documents:
+            try:
+                result = self.ingestDocument(doc)
+                results += [result]
+                num_chunks += result['metadata']['num_chunks']
+            except Exception as e:
+                print(f"Error uploading document {str(doc)}, {e}")
+        
+        stats = self.getStats()
+        stats['changes'] = {
+
+            'docs_added': [str(doc) for doc in documents],
+            'chunks_added': num_chunks
+        }
+
+        return stats
+
     def getContext(
             self,
             query_text: str,
+            style: Optional[str] = None,
             n_results: int = 5,
             where: Optional[Dict[str, Any]] = None
     ) -> str :
@@ -107,6 +155,7 @@ class RAGPipeline:
 
         Args:
             query_text: The input query string.
+            style: (Optional) The context prompt template. Determines LLM response style. If empty, defaults to self._context_prompt
             n_results: Number of top similar documents to retrieve.
             embedding_model: Embedding model name (uses .env if not provided).
             where: Optional metadata filter for the search.
@@ -116,7 +165,6 @@ class RAGPipeline:
         """
         logger.info(f"Querying vector storage for {n_results} chunks.")
 
-        self._embedding_model = SentenceTransformer(self._embedding_model_name)
         query_embeddings = self._embedding_model.encode(query_text).tolist()
         results = self._collection.query(
             query_embeddings=query_embeddings,
@@ -130,8 +178,14 @@ class RAGPipeline:
         context = ",\n".join(
             [f"{doc}\n(Source: {src})" for (doc, src) in zip(documents, sources)]
             )
+        
+        style = self._context_prompts[style] if style else self._context_prompt
+
         context_prompt = (
-            f"Answer the user's question, using the provided context to augment your existing knowledge. Trust the provided context over raw intuition. Cite the source of the context you use. \n\nContext:\n{context},\n\nQuestion: {query_text}"
+            style.format(
+                context = context,
+                query_text = query_text
+            )
             )
 
         logger.info(f"Query returned {len(results['documents'])} documents.")
@@ -141,7 +195,8 @@ class RAGPipeline:
     def queryWithContext(
             self,
             query_text: str,
-            n_results: int = 5,
+            style: Optional[str] = None,
+            n_results: Optional[int] = None,
             where: Optional[Dict[str, Any]] = None
     ) -> str:
         """
@@ -149,13 +204,19 @@ class RAGPipeline:
 
         Args:
             query_text: The input query string.
+            style: Optional template for context prompt. Determines LLM response type.
             n_results: Number of top similar documents to retrieve.
             where: Optional metadata filter for the search.
         Returns:
             response: str, The LLM's response text.
         """
+
+        if not n_results:
+            n_results = self._n_results
+        
         context_prompt = self.getContext(
             query_text=query_text,
+            style = style,
             n_results=n_results,
             where=where
         )
@@ -207,7 +268,7 @@ class RAGPipeline:
         
         Warning: This is irreversible!
         """
-        self._collection.delete()
+        self._client.delete_collection(self._collection_name)
         logger.info("Vector store has been reset")
     
     def __repr__(self) -> str:
