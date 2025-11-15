@@ -23,7 +23,11 @@ class Settings(BaseSettings):
     # Vector Storage Settings
     
     # LLM Client Settings
-    GEMINI_API_KEY: str = "AIzaSyBSbS0yA637U02PAYO4V7FAZ7DxlMZyyvc"
+    GEMINI_API_KEY: str
     GEMINI_MODEL: str = "gemini-2.0-flash"
     LLM_MAX_RETRIES: int = 5
     LLM_MAX_DELAY: int = 60
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
