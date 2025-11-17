@@ -43,7 +43,7 @@ class QueryRequest(BaseModel):
     metadata: Optional[QueryMetadata] = None                        # Optional metadata to filter query on
     n_results: Optional[int] = None                                 # Optional number of document chunks to use as context
     style: PromptStyle = PromptStyle.SIMPLE                         # The custom prompt to use with the context/query in the llm client
-    context_settings: ContextSettings = ContextSettings.RESPONSE_ONLY       # Whether to return just the response, the response and context, or just the context
+    return_context: bool = False                                    # Whether to return just the response, or the response and context
 
 
 class Source(BaseModel):

@@ -4,36 +4,14 @@ from collections import OrderedDict
 import google.generativeai as genai
 import time
 import random
+from app.config import settings
+from app.models.schemas import PromptStyle
 
 class LLMClient:
-    def __init__(
-            self,
-            api_key: str,
-            model_name: str,
-            max_retries: int,
-            max_delay: int,
-            cache_enabled: bool = True,
-            ):
-        
-        self._api_key = api_key
-        self._model_name = model_name
-        self._model = self.initialize_model()
-        self._max_retries = max_retries
-        self._delay = max_delay
-        self._cache_enabled = cache_enabled
-        self._max_cache_size = 100
+    def __init__(self):
+        genai.configure(api_key = settings.GEMINI_API_KEY)
+        self._model = genai.GenerativeModel(settings.GEMINI_MODEL)
         self._cache: OrderedDict[str, str] = OrderedDict()
-
-
-    def initialize_model(self):
-        """
-        Initialize the Gemini model with safety settings.
-        
-        Returns:
-            Configured GenerativeModel instance
-        """
-        genai.configure(api_key = self._api_key)
-        return genai.GenerativeModel(self._model_name)
 
 
     def _validate_prompt(self, prompt: str) -> None:
@@ -63,35 +41,42 @@ class LLMClient:
         Returns:
             Model's response text
         """
-
-        for attempt in range(self._max_retries):
+        delay = 1
+        for attempt in range(settings.LLM_MAX_RETRIES):
             try:
                 response = self._model.generate_content(prompt)
                 return response.text
             except Exception as e:
-                if attempt == self._max_retries - 1:
+                if attempt == settings.LLM_MAX_RETRIES - 1:
                     raise e
-                sleep_time = self._delay * (2 ** attempt) + random.uniform(0, 1)
+                sleep_time = delay * (2 ** attempt) + random.uniform(0, 1)
                 time.sleep(sleep_time)
 
 
-    def query(
+    def answer(
             self,
             prompt: str,
+            context: List[str],
+            style: PromptStyle
             ) -> str:
-        
+        '''
+        Answer a user's question with the given context and prompt style.
+
+        Params:
+            Question - The user's question
+            Context - Text chunks from the database to provide context to the user's question
+            Style - The style in which the LLM should answer. There are multiple 'style' options, each tied to a context prompt template designed to elicit a particular conversational style from the LLM.
+        '''
         self._validate_prompt(prompt)
 
-        if self._cache_enabled:
-            prompt_hash = hashlib.sha256(prompt.encode('utf-8')).hexdigest()
-            if prompt_hash in self._cache:
-                return self._cache[prompt_hash]
+        prompt_hash = hashlib.sha256(prompt.encode('utf-8')).hexdigest()
+        if prompt_hash in self._cache:
+            return self._cache[prompt_hash]
         
         response_text = self._call_with_exponential_backoff(prompt)
 
-        if self._cache_enabled:
-            if len(self._cache) >= self._max_cache_size:
-                self._cache.popitem(last=False)
-            self._cache[prompt_hash] = response_text
+        if len(self._cache) >= settings.MAX_CACHE_SIZE:
+            self._cache.popitem(last=False)
+        self._cache[prompt_hash] = response_text
         
         return response_text
