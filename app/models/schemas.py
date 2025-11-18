@@ -25,10 +25,7 @@ class DocumentMetadata(BaseModel):
 
 
 class UploadResponse(BaseModel):
-    document_id: str                # The document id
-    filename: str                   # The filename of the document being uploaded
-    status: DocumentStatus          # The status of the document being uploaded
-    documentMetadata: Optional[DocumentMetadata] = None     # The metadata for the document, returned when upload is complete or errors
+    document_metadata: DocumentMetadata     # The metadata for the document, returned when upload is complete or errors
 
 
 # Query Schemas

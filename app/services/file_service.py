@@ -35,7 +35,7 @@ def validate_file(file: UploadFile) -> None:
         )
     
 
-def save_upload(
+async def save_upload(
     file: UploadFile,
     document_id: str
 ) -> str:
@@ -87,19 +87,3 @@ def generate_document_id(filename: str) -> str:
     '''
     timestamp = str(uuid.uuid4())
     return hashlib.md5(f"{filename}_{timestamp}".encode()).hexdigest()[:16]
-
-
-def generate_file_metadata(file: UploadFile) -> Dict[str,Any]:
-    '''
-    Params:
-    filepath - Path to file from which metadata is extracted
-
-    Extract metadata from a file
-
-    Returns - Dict with Metadata
-    '''
-    return {
-        "name": file.name,
-        "size": file.size,
-        "upload_time": datetime.now()
-    }

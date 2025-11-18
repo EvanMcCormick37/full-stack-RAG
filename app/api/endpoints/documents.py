@@ -1,14 +1,60 @@
-from fastapi import APIRouter, HTTPException, Query
-from app.models.schemas import DocumentList, DocumentMetadata, DeleteResponse
-from app.services.rag_service import rag_service
-from app.services.file_service import delete_file
+from fastapi import APIRouter, HTTPException, UploadFile, File
+from datetime import datetime
+from app.models.schemas import DocumentListResponse, DocumentMetadata, DeleteResponse, UploadResponse
+from app.services import file_service, rag_service
 import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-@router.get("/", response_model = DocumentList)
-async def list_documents()
+@router.post("/", response_model = UploadResponse)
+def upload_document(
+    file: UploadFile = File(...)
+):
+    '''
+    Upload and process a document
+
+    Params:
+        file - File to upload
+    
+    Returns:
+        Document ID and processing status.
+    '''
+    try:
+        file_service.validate_file(file)
+
+        document_id = file_service.generate_document_id(file.filename)
+        file_path = file_service.save_upload(file, document_id)
+        upload_time = datetime.now()
+
+        num_chunks = rag_service.process_document(
+            document_id,
+            file.name,
+            file_path,
+            upload_time
+        )
+
+        assert file_service.delete_file(file_path)
+
+        response = UploadResponse(
+            document_metadata = DocumentMetadata(
+                document_id = document_id,
+                filename = file.name,
+                file_size = file.size,
+                upload_time = upload_time,
+                num_chunks = num_chunks
+            )
+        )
+
+        return response
+    
+    except Exception as e:
+        logger.error(f"Upload error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/", response_model = DocumentListResponse)
+def list_documents():
     '''
     List all uploaded documents
 
@@ -24,7 +70,7 @@ async def list_documents()
 
 
 @router.get("/{document_id}", response_model=DocumentMetadata)
-async def get_document(document_id: str):
+def get_document(document_id: str):
     """Get details of a specific document"""
     try:
         document = rag_service.get_document(document_id)
@@ -45,32 +91,19 @@ async def get_document(document_id: str):
 
 
 @router.delete("/{document_id}", response_model=DeleteResponse)
-async def delete_document(document_id: str):
+def delete_document(document_id: str):
     """Delete a document and remove it from the index"""
     try:
         # Get document info
         success = rag_service.delete_document(document_id)
         
-        if not document:
+        if not success:
             raise HTTPException(
                 status_code=404,
                 detail=f"Document {document_id} not found"
             )
         
-        # Delete from vector store
-        await rag_service.delete_document(document_id)
-        
-        # Delete file from disk
-        file_path = rag_service.get_file_path(document_id)
-        if file_path:
-            FileService.delete_file(file_path)
-        
-        # Remove from metadata
-        rag_service.delete_document(document_id)
-        
         return DeleteResponse(
-            document_id=document_id,
-            message="Document deleted successfully",
             deleted=True
         )
         
@@ -79,3 +112,11 @@ async def delete_document(document_id: str):
     except Exception as e:
         logger.error(f"Error deleting document: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.get("/health")
+async def documents_health():
+    '''
+    Check if documents service is online
+    '''
+    return {"status": "operational","endpoint":"documents"}

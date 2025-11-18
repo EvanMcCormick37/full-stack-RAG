@@ -1,9 +1,11 @@
-from typing import List, Dict, Any
+from datetime import datetime
+from typing import List
 from sentence_transformers import SentenceTransformer
 import chromadb
 from chromadb import QueryResult
 
 from app.config import settings
+from app.core import document_processing
 from app.core.interfaces import (
     DocumentProcessor,
     LLMClient
@@ -24,12 +26,10 @@ class RAGService:
 
     def __init__(
         self,
-        document_processor: DocumentProcessor,
         llm_client: LLMClient,
     ):
         logger.info("Initializing RAG Service...")
         
-        self._document_processor = document_processor
         self._llm_client = llm_client
         self._embedding_model = SentenceTransformer(settings.EMBEDDING_MODEL)
         self._vector_database = chromadb.PersistentClient().get_or_create_collection(
@@ -41,28 +41,35 @@ class RAGService:
 
     def process_document(
         self,
-        file_path: str,
         document_id: str,
-        document_metadata: Dict[str, Any]
+        filename: str,
+        file_path: str,
+        upload_time: datetime
     ) -> int:
         '''
-        Params:
-        file_path - Path to file to be processed
-        document_id - Document ID of document to be processed
-
         Processes a single document
 
+        Params:
+            document_id - Document ID of document
+            filename - The name of the file
+            file_path - Path to file
+            upload_time - The time which the file was uploaded
+
         Returns:
-        DocumentParameters for the successfully processed document.
+            The number of chunks the document was chunked into.
         '''
-        text = self._document_processor.extract_text(file_path)
-        
-        chunks = self._document_processor.chunk_text(text)
+        text = document_processing.extract_text(file_path)
+        chunks = document_processing.chunk_text(text)
         embeddings = self._embedding_model.encode(
             chunks,
             show_progress_bar = True,
             convert_to_numpy = True
         )
+        document_metadata = {
+            'document_id': document_id,
+            'filename': filename,
+            'upload_time': upload_time
+            }
         metadatas = [document_metadata*len(chunks)]
         chunk_ids = [f"{document_id}_{i}" for i in range(len(chunks))]
 
@@ -73,10 +80,10 @@ class RAGService:
                 metadatas = metadatas,
                 ids = chunk_ids
             )
+            
+            return len(chunks)
         except Exception as e:
-            raise VectorStoreError("Failed to add document chunks to the database: {e}")
-        
-        return len(chunks)
+            raise VectorStoreError(f"Failed to add document chunks to the database: {str(e)}")
     
 
     def query(
@@ -199,9 +206,9 @@ class RAGService:
         Returns:
             A list of Sources generated from the QueryResult.
         '''
+        ids = chromadb_queryresult['ids'][0]
         documents = chromadb_queryresult['documents'][0]
         metadatas = chromadb_queryresult['metadatas'][0]
-        ids = chromadb_queryresult['ids'][0]
 
         sources = [
             Source(

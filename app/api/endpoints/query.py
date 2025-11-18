@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from app.models.schemas import QueryRequest, QueryResponse
-from app.services.rag_service import rag_service
+from app.services import rag_service
 import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.post("/", response_model = QueryResponse)
-async def query(request: QueryRequest):
+def query(request: QueryRequest):
     """
     Query the RAG model
 
@@ -15,16 +15,14 @@ async def query(request: QueryRequest):
         request - A QueryRequest with the question, prompt-style, optional metadata filter, n_results, and return_context.
     """
     try:
-        response = await rag_service.query(
+        response = rag_service.query(
             question = request.question,
             style = request.style,
             n_results = request.n_results,
             return_context = request.return_context
         )
-
         return response
     except Exception as e:
-        logger.error(f"Query error: {str(e)}")
         raise HTTPException(
             status_code = 500,
             detail = f"Query failed: {str(e)}"
