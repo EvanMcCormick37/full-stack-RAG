@@ -47,13 +47,14 @@ class QueryRequest(BaseModel):
 
 
 class Source(BaseModel):
+    document_id: str                    # The document ID of the source document
     filename: str                       # The name of the source document
-    page_number: Optional[int] = None   # The page number of the context text within the document
+    date_uploaded: datetime             # The date on which the source file was added to the database
     chunk_text: str                     # The raw context text
 
 
 class QueryResponse(BaseModel):
-    answer: Optional[str] = None                # The answer returned by the LLM client
+    answer: str                                 # The answer returned by the LLM client
     sources: Optional[List[Source]] = None      # The sources retrieved by the RAG model
 
 

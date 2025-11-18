@@ -3,6 +3,7 @@ import asyncio
 import time
 from sentence_transformers import SentenceTransformer
 import chromadb
+from chromadb import QueryResult
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -14,7 +15,6 @@ from app.core.interfaces import (
     DocumentProcessor,
     LLMClient
 )
-from app.core.config import RAGConfig
 from app.core.exceptions import (
     DocumentProcessingError,
     EmbeddingGenerationError,
@@ -93,8 +93,9 @@ class RAGService:
         self,
         question: str,
         style: PromptStyle,
-        n_results: int = settings.N_SEARCH_RESULTS
-    ):
+        n_results: int = settings.N_SEARCH_RESULTS,
+        return_context: bool = settings.RETURN_CONTEXT
+    ) -> QueryResponse:
         """
         Query the RAG system for a response with context.
 
@@ -113,16 +114,46 @@ class RAGService:
 
         embedding = self._embedding_model.encode(question).tolist()
 
-        context = self._vector_database.query(
+        chromadb_query_result = self._vector_database.query(
             query_embeddings=embedding,
             n_results=n_results
         )
 
-        context_docs = context['documents'][0]
+
+        context_docs = chromadb_query_result['documents'][0]
         answer = self._llm_client.answer(
             question,
             context_docs,
             style
         )
 
-        return answer
+        response = QueryResponse(
+            answer = answer,
+            context = self._convert_chromadb_query_result_to_context(chromadb_query_result) if return_context else None
+        )
+
+        return response
+    
+    def _convert_chromadb_query_result_to_context(self, chromadb_query_result: QueryResult) -> List[Source]:
+        '''
+        Converts a QueryResult object to List[Source]
+
+        Params:
+            chromadb_query_result - The QueryResult object to be converted
+        
+        Returns:
+            A list of Sources generated from the QueryResult.
+        '''
+        documents = chromadb_query_result['documents'][0]
+        metadatas = chromadb_query_result['metadatas'][0]
+        ids = chromadb_query_result['ids'][0]
+
+        sources = [
+            Source(
+                document_id = id,
+                filename = metadata['name'],
+                date_uploaded = metadata['date_uploaded'],
+                chunk_text = document
+            ) for (id, document, metadata) in zip(ids, documents, metadatas)]
+
+        return sources

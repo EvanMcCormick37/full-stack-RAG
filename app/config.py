@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     LLM_MAX_RETRIES: int = 5
     LLM_MAX_DELAY: int = 60
     MAX_CACHE_SIZE:int = 100
+    RETURN_CONTEXT: bool = False
 
     class Config:
         env_file = ".env"
