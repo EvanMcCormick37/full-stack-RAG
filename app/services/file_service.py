@@ -101,5 +101,5 @@ def generate_file_metadata(file: UploadFile) -> Dict[str,Any]:
     return {
         "name": file.name,
         "size": file.size,
-        "date_uploaded": datetime.now()
+        "upload_time": datetime.now()
     }

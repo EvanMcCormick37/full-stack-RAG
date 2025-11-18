@@ -1,27 +1,17 @@
-from typing import List, Dict, Optional, Any
-import asyncio
-import time
+from typing import List, Dict, Any
 from sentence_transformers import SentenceTransformer
 import chromadb
 from chromadb import QueryResult
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type
-)
+
 from app.config import settings
 from app.core.interfaces import (
     DocumentProcessor,
     LLMClient
 )
 from app.core.exceptions import (
-    DocumentProcessingError,
-    EmbeddingGenerationError,
     VectorStoreError,
-    LLMError
 )
-from app.models.schemas import Source, QueryResponse, PromptStyle
+from app.models.schemas import Source, QueryResponse, PromptStyle, DocumentListResponse, DocumentMetadata
 import logging
 
 logger = logging.getLogger(__name__)
@@ -105,54 +95,119 @@ class RAGService:
 
         Returns:
             QueryResponse with answer, sources, and metadata
-        Raises:
-            LLMError if answer generation fails
-            EmbeddingGenerationError: If query embedding fails
-            VectorStoreError: If search fails
         """
         logger.info(f"Processing query: {question[:100]}...")
 
         embedding = self._embedding_model.encode(question).tolist()
 
-        chromadb_query_result = self._vector_database.query(
-            query_embeddings=embedding,
-            n_results=n_results
+        chromadb_queryresult = self._vector_database.query(
+            query_embeddings = embedding,
+            n_results = n_results
         )
 
 
-        context_docs = chromadb_query_result['documents'][0]
+        sources = self._convert_chromadb_queryresult_to_sources(chromadb_queryresult)
         answer = self._llm_client.answer(
             question,
-            context_docs,
+            sources,
             style
         )
 
         response = QueryResponse(
             answer = answer,
-            context = self._convert_chromadb_query_result_to_context(chromadb_query_result) if return_context else None
+            context = sources if return_context else None
         )
 
         return response
     
-    def _convert_chromadb_query_result_to_context(self, chromadb_query_result: QueryResult) -> List[Source]:
+
+    def list_documents(self) -> DocumentListResponse:
+        """
+        Get a list of unique document sources in the vector store.
+        
+        Returns:
+            DocumentList of document filenames
+        """
+        # Get all documents
+        all_docs = self._vector_database.get()
+        
+        # Extract unique sources
+        sources = set()
+        if all_docs['metadatas']:
+            for metadata in all_docs['metadatas']:
+                if 'source' in metadata:
+                    sources.add(metadata['source'])
+
+        response = DocumentListResponse(
+            sources=sorted(list(sources)),
+            total=len(list(sources))
+        )
+        
+        return response
+
+
+
+    def get_document(self, document_id: str) -> DocumentMetadata | None:
+        """
+        Get the metadata for a single document from the vector store.
+
+        Params:
+            document_id - The ID of the document to get metadata for
+
+        Returns:
+            DocumentMetadata with the metadata for the document ID
+        """
+        doc = self._vector_database.get(ids=document_id)
+        if doc['metadatas']:
+            metadata = doc['metadatas'][0]
+            response = DocumentMetadata(
+                document_id = document_id,
+                filename = metadata['name'],
+                file_size = metadata['size'],
+                upload_time = metadata['upload_time'],
+                num_chunks=len(doc['metadatas'])
+            )
+            return response
+        return None
+
+
+    def delete_document(self, document_id: str) -> bool:
+        '''
+        Delete a document from the vector store.
+
+        Params:
+            document_id - The ID of the document to be deleted.
+
+        Returns:
+            bool representing the success of the deletion. True -> success, False -> failure
+        '''
+        self._vector_database.delete(
+            where={"document_id": document_id}
+        )
+        results = self._vector_database.get(ids = document_id)
+
+        return (len(results['ids'])==0)
+
+
+    def _convert_chromadb_queryresult_to_sources(self, chromadb_queryresult: QueryResult) -> List[Source]:
         '''
         Converts a QueryResult object to List[Source]
 
         Params:
-            chromadb_query_result - The QueryResult object to be converted
+            chromadb_queryresult - The QueryResult object to be converted
         
         Returns:
             A list of Sources generated from the QueryResult.
         '''
-        documents = chromadb_query_result['documents'][0]
-        metadatas = chromadb_query_result['metadatas'][0]
-        ids = chromadb_query_result['ids'][0]
+        documents = chromadb_queryresult['documents'][0]
+        metadatas = chromadb_queryresult['metadatas'][0]
+        ids = chromadb_queryresult['ids'][0]
 
         sources = [
             Source(
                 document_id = id,
                 filename = metadata['name'],
-                date_uploaded = metadata['date_uploaded'],
+                upload_time = metadata['upload_time'],
                 chunk_text = document
             ) for (id, document, metadata) in zip(ids, documents, metadatas)]
 

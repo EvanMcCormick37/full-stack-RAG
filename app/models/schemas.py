@@ -21,7 +21,6 @@ class DocumentMetadata(BaseModel):
     filename: str                   # The name of the document
     file_size: int                  # The size of the document
     upload_time: datetime           # The time which the file was uploaded
-    status: DocumentStatus          # The status of the document being uploaded
     num_chunks: int                 # The number of chunks the document was split into
 
 
@@ -49,7 +48,7 @@ class QueryRequest(BaseModel):
 class Source(BaseModel):
     document_id: str                    # The document ID of the source document
     filename: str                       # The name of the source document
-    date_uploaded: datetime             # The date on which the source file was added to the database
+    upload_time: datetime               # The time which the source file was added to the database
     chunk_text: str                     # The raw context text
 
 
@@ -60,7 +59,7 @@ class QueryResponse(BaseModel):
 
 # List Documents Schemas
 class DocumentListResponse(BaseModel):
-    documents: List[DocumentMetadata]           # The documents being listed
+    documents: List[str]                        # The documents being listed
     total: int                                  # The total number of uploaded documents
 
 

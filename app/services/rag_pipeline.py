@@ -49,11 +49,7 @@ class RAGPipeline:
         self._n_results = n_results if n_results else int(os.getenv("VECTOR_SEARCH_N_RESULTS",5))
         self._llm_model = llm_model if llm_model else os.getenv("LLM_MODEL", "gemini-2.0-flash")
         self._api_key = os.getenv("GEMINI_API_KEY")
-        self._context_prompts = {
-            "distracted": "Acknowledge the user's question, but then relate it to the provided context. Shift the discussion towards the information contained in the context documents, which you find endlessly fascinating. Do not cite the context or mention that you are referring to texts. These are your own ideas that you're excited to share. \n\nContext:\n{context},\n\nQuestion: {query_text}",
-            "simple":"Answer the users question using the provided context. Question: {query_text}\nContext: {context}",
-            "scholar": "You are a knowledgeable professor, and an expert in the field. Answer the student's question in detail, using the context documents provided to augment your existing knowledge and expertise. Cite the sources you use when appropriate. \n\nContext:\n{context},\n\nQuestion: {query_text}",
-        }
+        self._context_prompts = C
         self._context_prompt = self._context_prompts[context_prompt]
 
         self._document_processor = DocumentProcessor(
@@ -176,7 +172,7 @@ class RAGPipeline:
         sources = [metadata['source'] for metadata in results['metadatas'][0]]
 
         context = ",\n".join(
-            [f"{doc}\n(Source: {src})" for (doc, src) in zip(documents, sources)]
+            [f"{src.chunk_text}\n(Source: {src})" for (doc, src) in zip(documents, sources)]
             )
         
         style = self._context_prompts[style] if style else self._context_prompt

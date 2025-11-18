@@ -1,11 +1,12 @@
-from typing import Any, List, Dict, Optional
+from typing import List
 import hashlib
 from collections import OrderedDict
 import google.generativeai as genai
 import time
 import random
 from app.config import settings
-from app.models.schemas import PromptStyle
+from app.models.schemas import PromptStyle, Source
+from app.core.prompts import PROMPT_STYLES
 
 class LLMClient:
     def __init__(self):
@@ -55,28 +56,36 @@ class LLMClient:
 
     def answer(
             self,
-            prompt: str,
-            context: List[str],
+            question: str,
+            sources: List[Source],
             style: PromptStyle
             ) -> str:
         '''
-        Answer a user's question with the given context and prompt style.
+        Answer a user's question with the given sources and prompt-style. Generates a 'context-prompt' which the LLM answers.
 
         Params:
             Question - The user's question
-            Context - Text chunks from the database to provide context to the user's question
+            Sources - Text chunks from the database to provide context to the user's question
             Style - The style in which the LLM should answer. There are multiple 'style' options, each tied to a context prompt template designed to elicit a particular conversational style from the LLM.
+        
+        Returns:
+            The LLM's answer to the context prompt.
         '''
+        context = ",\n".join([f"{src.chunk_text}\n(Source: {src.filename})" for src in sources])
+        prompt = PROMPT_STYLES[style].format(
+            context = context,
+            question = question
+        )
         self._validate_prompt(prompt)
 
         prompt_hash = hashlib.sha256(prompt.encode('utf-8')).hexdigest()
         if prompt_hash in self._cache:
             return self._cache[prompt_hash]
         
-        response_text = self._call_with_exponential_backoff(prompt)
+        answer = self._call_with_exponential_backoff(prompt)
 
         if len(self._cache) >= settings.MAX_CACHE_SIZE:
             self._cache.popitem(last=False)
-        self._cache[prompt_hash] = response_text
+        self._cache[prompt_hash] = answer
         
-        return response_text
+        return answer
