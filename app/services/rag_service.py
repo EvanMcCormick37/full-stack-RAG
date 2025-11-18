@@ -70,7 +70,7 @@ class RAGService:
             'filename': filename,
             'upload_time': upload_time
             }
-        metadatas = [document_metadata*len(chunks)]
+        metadatas = [document_metadata]*len(chunks)
         chunk_ids = [f"{document_id}_{i}" for i in range(len(chunks))]
 
         try:

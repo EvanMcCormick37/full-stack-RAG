@@ -17,9 +17,8 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     logger.info("Starting RAG API...")
     # Initialize directories
-    os.makedirs(settings.UPLOAD, exist_ok=True)
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs(settings.TEMP_DIR, exist_ok=True)
-    os.makedirs(settings.CHROMA_PERSIST_DIR, exist_ok=True)
     logger.info("API startup complete.")
 
     yield
