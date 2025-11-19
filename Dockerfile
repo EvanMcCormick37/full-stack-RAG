@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /root/.local /root/.local
 
 # Copy application code
-COPY ./app .
+COPY ./app ./app
 
 # Set Python path
 ENV PATH=/root/.local/bin:$PATH
