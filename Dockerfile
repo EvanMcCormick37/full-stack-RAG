@@ -1,5 +1,5 @@
 # Multi-stage build for optimized image size
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 # Set working directory
 WORKDIR /app
@@ -20,14 +20,13 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install runtime dependencies only
-RUN apt-get update && apt-et install -y libgomp1 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
 
 # Copy dependencies from builder
 COPY --from=builder /root/.local /root/.local
 
 # Copy application code
-COPY ./app ./app
-COPY ./test ./test
+COPY ./app .
 
 # Set Python path
 ENV PATH=/root/.local/bin:$PATH
