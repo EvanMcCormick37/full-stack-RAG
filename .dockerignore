@@ -29,3 +29,17 @@ temp/
 # Environment
 .env
 .env.local
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# Docker
+Dockerfile
+docker-compose.yaml
+.dockerignore
