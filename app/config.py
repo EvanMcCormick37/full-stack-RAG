@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     # Vector database
     COLLECTION_NAME: str = "documents"
     N_SEARCH_RESULTS: int = 25
+    CHROMADB_PERSIST_DIR: str = "./chroma"
     
     # LLM Client Settings
     GEMINI_API_KEY: str

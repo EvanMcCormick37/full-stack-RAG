@@ -29,8 +29,11 @@ class RAGService:
         
         self._llm_client = llm_client
         self._embedding_model = SentenceTransformer(settings.EMBEDDING_MODEL)
-        self._vector_database = chromadb.PersistentClient().get_or_create_collection(
-            name = settings.COLLECTION_NAME
+        self._vector_database = chromadb.PersistentClient(
+            path = settings.CHROMADB_PERSIST_DIR
+        ).get_or_create_collection(
+            name = settings.COLLECTION_NAME,
+
         )
 
         logger.info("RAG Service Initialized.")
