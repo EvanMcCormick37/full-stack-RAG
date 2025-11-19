@@ -3,8 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
-from app.api.endpoints import upload, query, documents
-from app.utils.exceptions import RAGException
+from app.api.endpoints import query, documents
+from app.core.exceptions import RAGException
 import logging
 import os
 
@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
 
 # Initialize FastAPI
 app = FastAPI(
-    title = settings.TITLE,
+    title = settings.API_TITLE,
     version = settings.API_VERSION,
     description = "RAG-Powered Q&A System",
     lifespan = lifespan

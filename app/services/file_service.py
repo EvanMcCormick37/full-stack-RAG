@@ -24,14 +24,14 @@ def validate_file(file: UploadFile) -> None:
     Raises: FileValidationError
     '''
     file_ext = Path(file.filename).suffix.lower()
-    if file_ext not in settings.allowed_extensions:
+    if file_ext not in settings.ALLOWED_EXTENSIONS:
         raise FileValidationError(
             f"File type {file_ext} not allowed."
         )
     
-    if hasattr(file,'size') and file.size>settings.max_file_size:
+    if hasattr(file,'size') and file.size>settings.MAX_FILE_SIZE:
         raise FileValidationError(
-            f"File size {file.size} too large. Maximum file size allowed for upload is {settings.max_file_size}"
+            f"File size {file.size} too large. Maximum file size allowed for upload is {settings.MAX_FILE_SIZE}"
         )
     
 

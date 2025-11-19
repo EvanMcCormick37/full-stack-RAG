@@ -29,7 +29,7 @@ def upload_document(
 
         num_chunks = rag_service.process_document(
             document_id,
-            file.name,
+            file.filename,
             file_path,
             upload_time
         )
@@ -39,7 +39,7 @@ def upload_document(
         response = UploadResponse(
             document_metadata = DocumentMetadata(
                 document_id = document_id,
-                filename = file.name,
+                filename = file.filename,
                 file_size = file.size,
                 upload_time = upload_time,
                 num_chunks = num_chunks

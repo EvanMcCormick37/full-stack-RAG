@@ -6,10 +6,7 @@ from chromadb import QueryResult
 
 from app.config import settings
 from app.core import document_processing
-from app.core.interfaces import (
-    DocumentProcessor,
-    LLMClient
-)
+from app.core.interfaces import LLMClient
 from app.core.exceptions import (
     VectorStoreError,
 )
