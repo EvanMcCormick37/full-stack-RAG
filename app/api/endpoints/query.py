@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from app.models.schemas import QueryRequest, QueryResponse
 from app.services import rag_service
 import logging
+import traceback
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -23,6 +24,8 @@ def query(request: QueryRequest):
         )
         return response
     except Exception as e:
+        logger.error(f"Error querying the RAG pipeline. {str(e)}")
+        logger.error(traceback.format_exc())
         raise HTTPException(
             status_code = 500,
             detail = f"Query failed: {str(e)}"
@@ -33,4 +36,4 @@ async def query_health():
     '''
     Check if query service is online
     '''
-    return {"status": "operational","endpoint":"query"}
+    return {"status": "operational", "endpoint":"query"}

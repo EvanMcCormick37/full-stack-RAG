@@ -51,13 +51,13 @@ class Source(BaseModel):
 
 class QueryResponse(BaseModel):
     answer: str                                 # The answer returned by the LLM client
-    sources: Optional[List[Source]] = None      # The sources retrieved by the RAG model
+    context: Optional[List[Source]] = None      # The sources retrieved by the RAG model
 
 
 # List Documents Schemas
 class DocumentListResponse(BaseModel):
     documents: List[str]                        # The documents being listed
-    total: int                                  # The total number of uploaded documents
+    count: int                                  # The total number of uploaded documents
 
 
 class DeleteResponse(BaseModel):

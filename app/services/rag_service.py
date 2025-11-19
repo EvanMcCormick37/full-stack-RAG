@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from sentence_transformers import SentenceTransformer
 import chromadb
 from chromadb import QueryResult
 
 from app.config import settings
-from app.core import document_processing
+from app.services import document_service
 from app.core.interfaces import LLMClient
 from app.core.exceptions import (
     VectorStoreError,
@@ -55,8 +55,8 @@ class RAGService:
         Returns:
             The number of chunks the document was chunked into.
         '''
-        text = document_processing.extract_text(file_path)
-        chunks = document_processing.chunk_text(text)
+        text = document_service.extract_text(file_path)
+        chunks = document_service.chunk_text(text)
         embeddings = self._embedding_model.encode(
             chunks,
             show_progress_bar = True,
@@ -65,7 +65,7 @@ class RAGService:
         document_metadata = {
             'document_id': document_id,
             'filename': filename,
-            'upload_time': upload_time
+            'upload_time': upload_time.timestamp()  # Must convert datetime to float because chromadb doesn't store datetime values.
             }
         metadatas = [document_metadata]*len(chunks)
         chunk_ids = [f"{document_id}_{i}" for i in range(len(chunks))]
@@ -87,8 +87,8 @@ class RAGService:
         self,
         question: str,
         style: PromptStyle,
-        n_results: int = settings.N_SEARCH_RESULTS,
-        return_context: bool = settings.RETURN_CONTEXT
+        n_results: Optional[int] = None,
+        return_context: Optional[bool] = None
     ) -> QueryResponse:
         """
         Query the RAG system for a response with context.
@@ -100,9 +100,13 @@ class RAGService:
         Returns:
             QueryResponse with answer, sources, and metadata
         """
+
+        n_results = int(n_results) if n_results else int(settings.N_SEARCH_RESULTS)
+        return_context = bool(return_context) if return_context else bool(settings.RETURN_CONTEXT)
+
         logger.info(f"Processing query: {question[:100]}...")
 
-        embedding = self._embedding_model.encode(question).tolist()
+        embedding = self._embedding_model.encode(question)
 
         chromadb_queryresult = self._vector_database.query(
             query_embeddings = embedding,
@@ -119,7 +123,7 @@ class RAGService:
 
         response = QueryResponse(
             answer = answer,
-            context = sources if return_context else None
+            context = (sources if return_context else None)
         )
 
         return response
@@ -135,20 +139,21 @@ class RAGService:
         # Get all documents
         all_docs = self._vector_database.get()
         
-        # Extract unique sources
-        sources = set()
+        # Extract unique document metadata
+        documents = set()
         if all_docs['metadatas']:
             for metadata in all_docs['metadatas']:
                 if 'source' in metadata:
-                    sources.add(metadata['source'])
+                    documents.add(metadata['source'])
 
+        documents = sorted(list(documents))
+        count = len(documents)
         response = DocumentListResponse(
-            sources=sorted(list(sources)),
-            total=len(list(sources))
+            documents = documents,
+            count = count
         )
         
         return response
-
 
 
     def get_document(self, document_id: str) -> DocumentMetadata | None:
@@ -168,7 +173,7 @@ class RAGService:
                 document_id = document_id,
                 filename = metadata['name'],
                 file_size = metadata['size'],
-                upload_time = metadata['upload_time'],
+                upload_time = datetime.fromtimestamp(metadata['upload_time']),
                 num_chunks=len(doc['metadatas'])
             )
             return response
@@ -185,12 +190,18 @@ class RAGService:
         Returns:
             bool representing the success of the deletion. True -> success, False -> failure
         '''
+        results = self._vector_database.get(
+            where={"document_id": document_id}
+            )
+        
+        if len(results['ids']) == 0:
+            return False
+        
         self._vector_database.delete(
             where={"document_id": document_id}
         )
-        results = self._vector_database.get(ids = document_id)
 
-        return (len(results['ids'])==0)
+        return True
 
 
     def _convert_chromadb_queryresult_to_sources(self, chromadb_queryresult: QueryResult) -> List[Source]:
@@ -210,8 +221,8 @@ class RAGService:
         sources = [
             Source(
                 document_id = id,
-                filename = metadata['name'],
-                upload_time = metadata['upload_time'],
+                filename = metadata['filename'],
+                upload_time = datetime.fromtimestamp(metadata['upload_time']),
                 chunk_text = document
             ) for (id, document, metadata) in zip(ids, documents, metadatas)]
 

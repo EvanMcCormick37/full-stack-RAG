@@ -1,7 +1,7 @@
 from pathlib import Path
 import re
 from typing import List, Union
-import PyPDF2
+import pypdf
 from docx import Document as DocxDocument
 from app.config import settings
 
@@ -19,7 +19,7 @@ def extract_text(document: Union[str, Path, bytes]) -> str:
     if isinstance(document, bytes):
         file_type = file_type.lower()
         if file_type == 'pdf':
-            reader = PyPDF2.PdfReader(document)
+            reader = pypdf.PdfReader(document)
             text = ''.join(page.extract_text() for page in reader.pages)
         elif file_type in {'doc', 'docx'}:
             doc = DocxDocument(document)
@@ -41,7 +41,7 @@ def extract_text(document: Union[str, Path, bytes]) -> str:
         file_type = file_path.suffix[1:].lower()
         if file_type == 'pdf':
             with open(file_path, 'rb') as f:
-                reader = PyPDF2.PdfReader(f)
+                reader = pypdf.PdfReader(f)
                 text = ''.join(page.extract_text() for page in reader.pages)
         elif file_type in {'doc', 'docx'}:
             doc = DocxDocument(file_path)
@@ -74,7 +74,7 @@ def clean_text(text: str) -> str:
         The cleaned text.
     '''
     text = re.sub(r'\n{3,}', '\n\n', text)
-    text = re.sub(r'\s{2,}', ' ', text)
+    text = re.sub(r'[ \t]{2,}', ' ', text)
     text = re.sub(r'[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f-\x9f]', '', text)
     return text.strip()
 
@@ -109,18 +109,17 @@ def chunk_text(text: str)-> List[str]:
     '''
     text = clean_text(text)
     chunks = []
-    start = 0
-    while start < len(text):
-        end = start + settings.CHUNK_SIZE
-        if end > len(text):
-            search_start = max(end-100, start)
-            sentence_end = find_sentence_boundary(text[search_start:end])
+    head = 0
+    while head < len(text):
+        jump = head + settings.CHUNK_SIZE
+        if jump < len(text):
+            search_start = max(jump-200, head)
+            sentence_end = find_sentence_boundary(text[search_start:jump])
             if sentence_end != -1:
-                end = search_start + sentence_end
-        chunk = text[start:end].strip()
+                jump = search_start + sentence_end
+        
+        chunk = text[head:jump].strip()
         if chunk:
             chunks.append(chunk)
-        start = end - settings.CHUNK_OVERLAP
-        if start <= (chunks[-1]['start_char'] if chunks else 0):
-            start = end
+        head = (jump - settings.CHUNK_OVERLAP) if ((jump - settings.CHUNK_OVERLAP) > head) else jump
     return chunks

@@ -1,5 +1,6 @@
 from typing import Protocol, List
 from abc import abstractmethod
+from app.models.schemas import PromptStyle, Source
 
 
 class LLMClient(Protocol):
@@ -7,8 +8,8 @@ class LLMClient(Protocol):
     def answer(
         self,
         question: str,
-        context_docs: List[str],
-        style: str
+        context_docs: List[Source],
+        style: PromptStyle
     ) -> str:
         # Generate answer from context prompt
         ...

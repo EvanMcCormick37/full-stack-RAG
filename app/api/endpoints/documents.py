@@ -1,11 +1,20 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from datetime import datetime
+import traceback
 from app.models.schemas import DocumentListResponse, DocumentMetadata, DeleteResponse, UploadResponse
 from app.services import file_service, rag_service
 import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+@router.get("/health")
+async def documents_health():
+    '''
+    Check if documents service is online
+    '''
+    return {"status": "operational", "endpoint":"documents"}
+
 
 @router.post("/", response_model = UploadResponse)
 def upload_document(
@@ -34,7 +43,7 @@ def upload_document(
             upload_time
         )
 
-        assert file_service.delete_file(file_path)
+        file_service.delete_file(file_path)
 
         response = UploadResponse(
             document_metadata = DocumentMetadata(
@@ -50,6 +59,7 @@ def upload_document(
     
     except Exception as e:
         logger.error(f"Upload error: {str(e)}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -66,6 +76,7 @@ def list_documents():
         
     except Exception as e:
         logger.error(f"Error listing documents: {str(e)}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -87,6 +98,7 @@ def get_document(document_id: str):
         raise
     except Exception as e:
         logger.error(f"Error getting document: {str(e)}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -111,12 +123,5 @@ def delete_document(document_id: str):
         raise
     except Exception as e:
         logger.error(f"Error deleting document: {str(e)}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
-    
-
-@router.get("/health")
-async def documents_health():
-    '''
-    Check if documents service is online
-    '''
-    return {"status": "operational","endpoint":"documents"}

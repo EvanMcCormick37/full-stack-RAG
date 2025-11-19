@@ -2,14 +2,11 @@ import os
 import hashlib
 import uuid
 from pathlib import Path
-from contextlib import asynccontextmanager
-from typing import AsyncIterator
 from fastapi import UploadFile
-from typing import Dict, Any
-from datetime import datetime
 import logging
+import traceback
 from app.config import settings
-from app.core.exceptions import FileValidationError, FileOperationError
+from app.core.exceptions import FileValidationError
 
 
 logger = logging.getLogger(__name__)
@@ -35,7 +32,7 @@ def validate_file(file: UploadFile) -> None:
         )
     
 
-async def save_upload(
+def save_upload(
     file: UploadFile,
     document_id: str
 ) -> str:
