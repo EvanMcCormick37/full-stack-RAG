@@ -1,23 +1,23 @@
 # Load .env file if it exists
-ifneq(,$(wildcard ./.env))
+ifneq (,$(wildcard ./.env))
 	include .env
 	export
 endif
 
-.PHONY: help build up down logs clean shell health test-api
+.PHONY: help build up dev down logs clean clean-all shell health test
 
 # Default target
 help:
 	@echo "<<Available Commands>>"
-	@echo "  make build		- Build the docker image"
-	@echo "  make up		- Start the application (background)"
-	@echo "  make dev		- Start the application (foreground + rebuild)"
-	@echo "  make down		- Stop and remove containers"
-	@echo "  make logs		- Follow back-end logs"
-	@echo "  make clean		- Remove containers, volumes and images associated with this build"
-	@echo "  make clean-all	- Remove all containers, volumes, images, and caches (Nuclear option!)"
-	@echo "  make shell		- Open a Bash shell inside of the container"
-	@echo "  make test		- Mount test/ to the docker image and run all tests"
+	@echo "  make build			- Build the docker image"
+	@echo "  make up			- Start the application (background)"
+	@echo "  make dev			- Start the application (foreground + rebuild)"
+	@echo "  make down			- Stop and remove containers"
+	@echo "  make logs			- Follow back-end logs"
+	@echo "  make clean			- Remove containers, volumes and images associated with this build"
+	@echo "  make clean-all		- Remove all containers, volumes, images, and caches (Nuclear option!)"
+	@echo "  make shell			- Open a Bash shell inside of the container"
+	@echo "  make test			- Mount test/ to the docker image and run all tests"
 
 # Build the image (forcing a rebuild each time code changes)
 build:
@@ -49,7 +49,7 @@ health:
 
 # Mounts the test/ directory and runs tests on the container build
 test:
-	docker-compose exec -v $(PWD)/test:/app/test rag-backend pytest /app/test -v
+	docker-compose run --rm -v $(PWD)/test:/app/test rag-backend pytest /app/test -v
 
 # Cleans everything including volumes
 clean:
