@@ -10,7 +10,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # Directory Config
+      # Persistent directory Config
       - UPLOAD_DIR=/app/uploads
       - TEMP_DIR=/app/temp
       - CHROMADB_PERSIST_DIR=/app/chroma
