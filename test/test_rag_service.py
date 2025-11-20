@@ -1,8 +1,6 @@
-import os
 import pytest
-from pathlib import Path
 from datetime import datetime
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, patch
 import numpy as np
 from app.services.rag_service import RAGService
 from app.models.schemas import (

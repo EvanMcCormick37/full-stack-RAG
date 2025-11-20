@@ -37,6 +37,7 @@ humanfriendly==10.0
 idna==3.11
 importlib_metadata==8.7.0
 importlib_resources==6.5.2
+iniconfig==2.3.0
 Jinja2==3.1.6
 joblib==1.5.2
 jsonschema==4.25.1
@@ -62,6 +63,7 @@ orjson==3.11.4
 overrides==7.7.0
 packaging==25.0
 pillow==12.0.0
+pluggy==1.6.0
 posthog==5.4.0
 proto-plus==1.26.1
 protobuf==5.29.5
@@ -77,6 +79,7 @@ pypdf==6.3.0
 PyPika==0.48.9
 pyproject_hooks==1.2.0
 pyreadline3==3.5.4
+pytest==9.0.1
 python-dateutil==2.9.0.post0
 python-docx==1.2.0
 python-dotenv==1.2.1
