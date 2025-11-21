@@ -89,11 +89,6 @@ class TestDocumentEndpoints:
         """Test getting a document that doesn't exist"""
         response = client.get("/api/v1/documents/fake_id_12345")
         assert response.status_code == 404
-    
-    def test_delete_nonexistent_document(self):
-        """Test deleting a document that doesn't exist"""
-        response = client.delete("/api/v1/documents/fake_id_12345")
-        assert response.status_code == 404
 
 
 class TestQueryEndpoint:

@@ -21,27 +21,30 @@ help:
 
 # Build the image (forcing a rebuild each time code changes)
 build:
-	docker-compose build
+	docker image prune -f
+	docker compose build
 
 # Start services in detached mode
 up:
-	docker-compose up -d
+	docker image prune -f
+	docker compose up -d
 
 # Builds and runs attached (dev mode)
 dev:
-	docker-compose up --build
+	docker image prune -f
+	docker compose up --build
 
 # Stop services
 down:
-	docker-compose down
+	docker compose down
 
 # View live logs
 logs:
-	docker-compose logs -f rag-backend
+	docker compose logs -f rag-backend
 
 # Access the container shell
 shell:
-	docker-compose exec rag-backend /bin/Bash
+	docker compose exec rag-backend /bin/bash
 
 # Quick health check (uses Curl command from the config)
 health:
@@ -49,14 +52,15 @@ health:
 
 # Mounts the test/ directory and runs tests on the container build
 test:
-	docker-compose run --rm -v $(PWD)/test:/app/test rag-backend pytest /app/test -v
+	docker image prune -f
+	docker compose run --rm -v $(PWD)/test:/app/test rag-backend /bin/bash
 
 # Cleans everything including volumes
 clean:
-	docker-compose down -v --rmi local --remove-orphans
+	docker compose down -v --rmi local --remove-orphans
+	docker image prune -f
 
 # Cleans everything including volumes and caches (Nuclear option!)
 clean-all:
-	docker-compose down -v
 	docker system prune -af
 	

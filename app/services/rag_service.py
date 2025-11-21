@@ -43,6 +43,7 @@ class RAGService:
         self,
         document_id: str,
         filename: str,
+        file_size: int,
         file_path: str,
         upload_time: datetime
     ) -> int:
@@ -51,9 +52,10 @@ class RAGService:
 
         Params:
             document_id - Document ID of document
-            filename - The name of the file
-            file_path - Path to file
-            upload_time - The time which the file was uploaded
+            filename - The name of the document file
+            file_size - The size of the document file in bytes
+            file_path - Path to document file
+            upload_time - The time which the document file was uploaded
 
         Returns:
             The number of chunks the document was chunked into.
@@ -68,6 +70,7 @@ class RAGService:
         document_metadata = {
             'document_id': document_id,
             'filename': filename,
+            'file_size': file_size,
             'upload_time': upload_time.timestamp()  # Must convert datetime to float because chromadb doesn't store datetime values.
             }
         metadatas = [document_metadata]*len(chunks)
@@ -139,21 +142,32 @@ class RAGService:
         Returns:
             DocumentList of document filenames
         """
-        # Get all documents
-        all_docs = self._vector_database.get()
-        
-        # Extract unique document metadata
-        documents = set()
-        if all_docs['metadatas']:
-            for metadata in all_docs['metadatas']:
-                if 'source' in metadata:
-                    documents.add(metadata['source'])
+        # Get all chunk metadatas
+        all_chunks = self._vector_database.get()
+        all_metadatas = all_chunks['metadatas']
 
-        documents = sorted(list(documents))
-        count = len(documents)
+        # If there are no chunks in the vector db return empty DocumentListResponse
+        if len(all_metadatas) == 0:
+            return DocumentListResponse(
+                documents = None,
+                storage_space=0,
+                count = 0
+            )
+        
+        # Extract unique document ids
+        document_ids = set()
+        for metadata in all_metadatas:
+            document_ids.add(metadata['document_id'])
+        
+        # Get DocumentMetadata for each unique document id in document ids.
+        document_metadatas = [
+            self.get_document(doc_id) for doc_id in sorted(list(document_ids))
+        ]
+
         response = DocumentListResponse(
-            documents = documents,
-            count = count
+            documents = document_metadatas,
+            storage_space = sum([doc.file_size for doc in document_metadatas]),
+            count = len(document_metadatas)
         )
         
         return response
@@ -169,15 +183,18 @@ class RAGService:
         Returns:
             DocumentMetadata with the metadata for the document ID
         """
-        doc = self._vector_database.get(ids=document_id)
-        if doc['metadatas']:
-            metadata = doc['metadatas'][0]
+        chunks = self._vector_database.get(
+            where={'document_id': document_id}
+            )
+        metadatas = chunks['metadatas']
+        if len(metadatas) > 0:
+            metadata = metadatas[0]
             response = DocumentMetadata(
                 document_id = document_id,
-                filename = metadata['name'],
-                file_size = metadata['size'],
+                filename = metadata['filename'],
+                file_size = metadata['file_size'],
                 upload_time = datetime.fromtimestamp(metadata['upload_time']),
-                num_chunks=len(doc['metadatas'])
+                num_chunks=len(metadatas)
             )
             return response
         return None
@@ -193,16 +210,16 @@ class RAGService:
         Returns:
             bool representing the success of the deletion. True -> success, False -> failure
         '''
+        self._vector_database.delete(
+            where={"document_id": document_id}
+        )
+
         results = self._vector_database.get(
             where={"document_id": document_id}
             )
         
-        if len(results['ids']) == 0:
+        if len(results['ids']) > 0:
             return False
-        
-        self._vector_database.delete(
-            where={"document_id": document_id}
-        )
 
         return True
 
@@ -217,16 +234,16 @@ class RAGService:
         Returns:
             A list of Sources generated from the QueryResult.
         '''
-        ids = chromadb_queryresult['ids'][0]
         documents = chromadb_queryresult['documents'][0]
         metadatas = chromadb_queryresult['metadatas'][0]
 
         sources = [
             Source(
-                document_id = id,
+                document_id = metadata['document_id'],
                 filename = metadata['filename'],
+                file_size = metadata['file_size'],
                 upload_time = datetime.fromtimestamp(metadata['upload_time']),
                 chunk_text = document
-            ) for (id, document, metadata) in zip(ids, documents, metadatas)]
+            ) for (document, metadata) in zip(documents, metadatas)]
 
         return sources
