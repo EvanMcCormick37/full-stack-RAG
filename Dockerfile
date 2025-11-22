@@ -27,14 +27,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm 
 
 # Copy dependencies from wheel directory and install
 COPY --from=builder /app/wheels /wheels
-RUN pip install --no-cache /wheels/*
+RUN pip install --no-cache /wheels/* && rm -rf /wheels
 
-# Copy application code and set user to appuser
+# Copy application code and tests
 COPY --chown=appuser:appuser ./app ./app
-# Set a dedicated cache directory within the /app volume for HuggingFace/Sentence-Transformers models
+COPY --chown=appuser:appuser ./test ./test
+
+# Set HuggingFace cache
 ENV HF_HOME=/app/.hf_cache
 RUN mkdir -p ${HF_HOME} && chown -R appuser:appuser ${HF_HOME}
-USER appuser
 
 # Set Python path
 ENV PATH=/root/.local/bin:$PATH
@@ -43,5 +44,10 @@ ENV PYTHONPATH=/app
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 CMD python -c "import requests; requests.get('http://localhost:8000/health')"
+
+# Set entrypoint script and run it to give user permissions over mounted directories
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
