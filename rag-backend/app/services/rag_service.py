@@ -29,11 +29,11 @@ class RAGService:
         
         self._llm_client = llm_client
         self._embedding_model = SentenceTransformer(settings.EMBEDDING_MODEL)
-        self._vector_database = chromadb.PersistentClient(
+        self._client = chromadb.PersistentClient(
             path = settings.CHROMADB_PERSIST_DIR
-        ).get_or_create_collection(
-            name = settings.COLLECTION_NAME,
-
+        )
+        self._vector_database = self._client.get_or_create_collection(
+            name = settings.COLLECTION_NAME
         )
 
         logger.info("RAG Service Initialized.")
@@ -220,6 +220,23 @@ class RAGService:
         
         if len(results['ids']) > 0:
             return False
+
+        return True
+    
+
+    def delete_all_documents(self) -> bool:
+        '''
+        Delete all documents from the vector store.
+        
+        Returns:
+            bool representing the success of deletion.
+        '''
+        self._client.delete_collection(
+            settings.COLLECTION_NAME
+        )
+        self._vector_database = self._client.get_or_create_collection(
+            settings.COLLECTION_NAME
+        )
 
         return True
 

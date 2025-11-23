@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Query
 from datetime import datetime
 import traceback
 from app.models.schemas import DocumentListResponse, DocumentMetadata, DeleteResponse, UploadResponse
@@ -83,7 +83,15 @@ def list_documents():
 
 @router.get("/{document_id}", response_model=DocumentMetadata)
 def get_document(document_id: str):
-    """Get details of a specific document"""
+    """
+    Get details of a specific document
+    
+    Params:
+        document_id - the ID of the document to get
+
+    Returns:
+        DocumentMetadata for the matching document if it exists.
+    """
     try:
         document = rag_service.get_document(document_id)
         
@@ -103,9 +111,37 @@ def get_document(document_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.delete("/", response_model=DeleteResponse)
+def delete_documents(confirm: bool = Query(False)):
+    """
+    Delete all documents from the vector database
+    
+    Returns:
+        bool indicating whether deletion was successful
+    """
+    try:
+        success = rag_service.delete_all_documents()
+        return DeleteResponse(
+            deleted=success
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting all documents: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.delete("/{document_id}", response_model=DeleteResponse)
 def delete_document(document_id: str):
-    """Delete a document and remove it from the index"""
+    """
+    Delete a document and remove it from the index
+
+    Params:
+        document_id - the ID of the document to delete
+    
+    Returns:
+        bool indicating whether deletion was successful (deleting a nonexistent document returns 'true')
+    """
     try:
         # Get document info
         success = rag_service.delete_document(document_id)
@@ -113,7 +149,7 @@ def delete_document(document_id: str):
         if not success:
             raise HTTPException(
                 status_code=404,
-                detail=f"Document {document_id} not found"
+                detail=f"Document {document_id} not deleted successfully."
             )
         
         return DeleteResponse(
