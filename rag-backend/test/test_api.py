@@ -14,24 +14,6 @@ from app.main import app
 
 client = TestClient(app)
 
-SAMPLE_TEXT = """
-    Retrieval-Augmented Generation (RAG) is an innovative AI framework that enhances the output of large language models (LLMs) by giving them access to up-to-date, relevant, and authoritative external knowledge bases before generating a response. Instead of relying solely on the static data from their initial training, RAG models dynamically retrieve pertinent information to ground their responses in facts. This addresses key limitations of standard LLMs, such as producing outdated information, fabricating answers ("hallucinations"), or lacking domain-specific expertise.
-The framework operates in two distinct stages: ingestion and inference.
-The Ingestion Stage: Preparing the knowledge base
-This preparatory stage is performed offline, before a user ever submits a query.
-Data Sourcing: The first step involves gathering the external data to be used. This information can come from diverse sources, including documents (PDFs, Word files), web pages, databases, and APIs. This data is organized into a knowledge base that is separate from the LLM's core training data.
-Chunking: To make the data manageable, documents are broken down into smaller, semantically coherent blocks of text called "chunks". The size of these chunks is a crucial parameter, as it must be large enough to retain context but small enough to fit within the LLM's context window.
-Embedding and Vectorization: An embedding model converts each text chunk into a numerical vector. This process is known as vectorization. These vectors are multi-dimensional representations that capture the semantic meaning of the text. Text chunks with similar meanings are mapped to vectors that are close to each other in this high-dimensional space.
-Vector Storage: The generated vectors are stored and indexed in a specialized database, known as a vector database. This allows for fast and efficient "semantic search," where the system can look for meaning rather than just keywords.
-The Inference Stage: Generating a grounded response
-This stage is triggered when a user submits a query to the RAG system.
-Query Embedding: The user's input is first transformed into a vector using the same embedding model used during the ingestion stage.
-Retrieval: The system uses this query vector to perform a semantic search in the vector database. It identifies and retrieves the most relevant data chunks, based on their vector similarity to the user's query.
-Prompt Augmentation: The retrieved information is integrated into a new, more comprehensive prompt. This augmented prompt, now enriched with relevant context, is then passed to the LLM. This is often called "prompt stuffing" or "in-context learning."
-Generation: The generative LLM uses the augmented prompt to formulate its response. By referencing the retrieved, up-to-date information, the model can produce a more accurate, contextually relevant, and grounded answer.
-Response Handling: The LLM's final output is presented to the user. Some advanced RAG systems can also provide citations, allowing users to verify the sources used for the response.
-"""
-
 
 class TestHealthChecks:
     """Test all health check endpoints"""
@@ -74,6 +56,33 @@ class TestDocumentEndpoints:
         
         # Delete
         delete_response = client.delete(f"/api/v1/documents/{document_id}")
+        assert delete_response.status_code == 200
+        assert delete_response.json()["deleted"] == True
+
+    def test_upload_and_delete_all_documents(self):
+        """Test uploading multiple documents and then deleting them all at once"""
+        # Create sample file
+        content1 = b"Machine learning is a branch of AI that enables systems to learn from data."
+        content2 = b"GPT stands for Generative Pre-trained Transformer. GPTs form the basic architecture of all modern LLMs."
+        file1 = ("test.txt", io.BytesIO(content1), "text/plain")
+        file2 = ("test2.txt", io.BytesIO(content2),"text/plain")
+        
+        # Upload
+        upload_response1 = client.post("/api/v1/documents/", files={"file": file1})
+        upload_response2 = client.post("/api/v1/documents/", files={"file": file2})
+        assert upload_response1.status_code == 200
+        
+        data1 = upload_response1.json()
+        data2 = upload_response2.json()
+        assert "document_metadata" in data1
+        assert "document_id" in data1["document_metadata"]
+        assert data1["document_metadata"]["num_chunks"] > 0
+        assert "document_metadata" in data2
+        assert "document_id" in data2["document_metadata"]
+        assert data2["document_metadata"]["num_chunks"] > 0
+        
+        # Delete
+        delete_response = client.delete(f"/api/v1/documents/", params={'confirm': True})
         assert delete_response.status_code == 200
         assert delete_response.json()["deleted"] == True
     

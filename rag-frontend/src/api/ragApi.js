@@ -26,7 +26,7 @@ export const ragApi = {
 
     getDocument: (documentId) => apiClient.get(`/api/v1/documents/${documentId}`),
 
-    deleteDocuments: (confirmed=true) => apiClient.delete('/api/v1/documents/',
+    deleteAllDocuments: (confirmed=true) => apiClient.delete('/api/v1/documents/',
         params={confirm: confirmed}
     ),
 

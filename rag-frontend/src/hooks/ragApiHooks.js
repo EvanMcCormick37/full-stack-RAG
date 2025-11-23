@@ -58,7 +58,7 @@ export const useDocuments = () => {
     const clearDocuments = async () => {
         setLoading(true);
         try{
-            const response = await ragApi.deleteDocuments();
+            const response = await ragApi.deleteAllDocuments();
             await fetchDocuments();
             return response;
         } catch (err) {

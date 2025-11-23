@@ -237,6 +237,9 @@ class RAGService:
         self._vector_database = self._client.get_or_create_collection(
             settings.COLLECTION_NAME
         )
+        
+        if self.list_documents().count > 0:
+            return False
 
         return True
 
