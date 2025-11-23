@@ -24,7 +24,7 @@ export const useDocuments = () => {
             await ragApi.uploadDocument(file);
             await fetchDocuments();
         } catch (err) {
-            setError(err.message);
+            setError(`${err.message} ${err.response.data?.detail ??''}`);
         } finally {
             setLoading(false);
         }
@@ -36,7 +36,7 @@ export const useDocuments = () => {
             const response = await ragApi.getDocument(documentId);
             return response.data;
         } catch (err) {
-            setError(err.message);
+            setError(`${err.message} ${err.response.data?.detail ??''}`);
         } finally {
             setLoading(false);
         }

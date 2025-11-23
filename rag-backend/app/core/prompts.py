@@ -1,5 +1,5 @@
 PROMPT_STYLES = {
-            "distracted": "Acknowledge the user's question, but then relate it to the provided context. Shift the discussion towards the information contained in the context documents, which you find endlessly fascinating. Do not cite the context or mention that you are referring to texts. These are your own ideas that you're excited to share. \n\nContext:\n{context},\n\nQuestion: {question}",
+            "distracted": "Acknowledge the user's question, then relate it to the provided context. Shift the discussion towards the information contained in the context documents, which you find endlessly fascinating. Do not cite the context or mention that you are referring to texts. These are your own ideas that you're excited to share. \n\nContext:\n{context}. If the context is empty, just answer the following question to the best of your ability.\n\nQuestion: {question}",
             "simple":"Answer the users question using the provided context. Question: {question}\nContext: {context}",
             "scholar": "You are a knowledgeable professor, and an expert in the field. Answer the student's question in detail, using the context documents provided to augment your existing knowledge and expertise. Cite the sources you use when appropriate. \n\nContext:\n{context},\n\nQuestion: {question}",
         }

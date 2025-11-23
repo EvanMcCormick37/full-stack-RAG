@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "../hooks/ragApiHooks";
-import { Send, Trash2, Bot, User, XCircle } from "lucide-react";
+import { Send, Eraser, Bot, User, XCircle } from "lucide-react";
 
 // --- Components ---
 
@@ -29,9 +29,13 @@ export const MessageList = ({ messageHistory }) => {
                     `}>
                         <div className="flex flex-col gap-1">
                             {/* Optional: Role Icon */}
-                            {msg.role !== 'user' && (
+                            {msg.role !== 'user' ? (
                                 <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400 mb-1 uppercase tracking-wider">
                                     <Bot size={14} /> AI Assistant
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400 mb-1 uppercase tracking-wider">
+                                    <User size={14} /> User
                                 </div>
                             )}
                             
@@ -77,7 +81,7 @@ export const QueryInput = ({ onQuery, onClearMessageHistory, disabled }) => {
                     className="p-2.5 text-zinc-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
                     title="Clear History"
                 >
-                    <Trash2 size={18} />
+                    <Eraser size={18} />
                 </button>
 
                 <textarea

@@ -162,7 +162,7 @@ const DocumentsSidebar = () => {
             <div className="px-4">
                 {error && (
                     <div className="mb-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-between text-xs text-red-400">
-                        <span className="truncate">{error}</span>
+                        <span className="overflow-wrap">{error}</span>
                         <button onClick={() => setError(null)}>&times;</button>
                     </div>
                 )}

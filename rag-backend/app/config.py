@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     # Upload
     UPLOAD_DIR: str = "./uploads"
     TEMP_DIR: str = "./temp"
-    MAX_FILE_SIZE: int = 10 * 1024 * 1024
+    MAX_FILE_SIZE: int = 100 * 1024 * 1024
     ALLOWED_EXTENSIONS: set = {".pdf", ".docx", ".txt", ".md"}
 
     # Document Processing
