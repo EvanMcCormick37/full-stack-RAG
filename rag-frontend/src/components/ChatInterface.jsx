@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useQuery } from "../../hooks/ragApiHooks";
+import { useQuery } from "../hooks/ragApiHooks";
 
 
 export const MessageList = ({messageHistory}) => {
