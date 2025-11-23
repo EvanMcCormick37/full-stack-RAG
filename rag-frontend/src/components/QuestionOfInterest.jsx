@@ -10,7 +10,7 @@ const GeneratedQuestion = ({}) => {
     );
 };
 
-export const QuestionOfInterest = ({}) => {
+const QuestionOfInterest = ({}) => {
     return (
         <div className='question-of-interest'>
             <GeneratedQuestion/>

@@ -10,7 +10,7 @@ export const useDocuments = () => {
         setLoading(true);
         try{
             const response = await ragApi.listDocuments();
-            setDocuments(response.documents ?? []);
+            setDocuments(response.data.documents ?? []);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -21,9 +21,8 @@ export const useDocuments = () => {
     const uploadDocument = async (file) => {
         setLoading(true);
         try {
-            const { response } = await ragApi.uploadDocument(file);
+            await ragApi.uploadDocument(file);
             await fetchDocuments();
-            return response;
         } catch (err) {
             setError(err.message);
         } finally {
@@ -34,8 +33,8 @@ export const useDocuments = () => {
     const getDocument = async (documentId) => {
         setLoading(true);
         try {
-            const { response } = await ragApi.getDocument(documentId);
-            return response;
+            const response = await ragApi.getDocument(documentId);
+            return response.data;
         } catch (err) {
             setError(err.message);
         } finally {
@@ -58,9 +57,8 @@ export const useDocuments = () => {
     const clearDocuments = async () => {
         setLoading(true);
         try{
-            const response = await ragApi.deleteAllDocuments();
+            await ragApi.deleteAllDocuments();
             await fetchDocuments();
-            return response;
         } catch (err) {
             setError(err.message);
         } finally {
@@ -92,11 +90,12 @@ export const useQuery = () => {
                 }
             ]))
             const response = await ragApi.query(query);
+            const data = response.data;
             setMessageHistory(prev => ([
                 ...prev, {
                     role: 'llm',
-                    content: response.answer,
-                    context: response.context || null,
+                    content: data.answer,
+                    context: data.context || null,
                     timestamp: new Date()
                 }
             ]));
