@@ -1,4 +1,4 @@
-import { useDocuments } from "../../hooks/ragApiHooks";
+import { useDocuments } from "../hooks/ragApiHooks";
 
 
 const UploadDocumentWidget = ({
