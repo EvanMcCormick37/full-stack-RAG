@@ -27,15 +27,15 @@ export const ragApi = {
         );
     },
 
-    listDocuments: () => apiClient.get(`${API_PREFIX}/documents/`),
+    listDocuments: () => apiClient.get(`${API_PREFIX}/documents`),
 
     getDocument: (documentId) => apiClient.get(`${API_PREFIX}/documents/${documentId}`),
 
-    deleteAllDocuments: (confirmed=true) => apiClient.delete(`${API_PREFIX}/documents/`,
+    deleteAllDocuments: (confirmed=true) => apiClient.delete(`${API_PREFIX}/documents`,
         {params: {confirm: confirmed}}
     ),
 
     deleteDocument: (documentId) => apiClient.delete(`${API_PREFIX}/documents/${documentId}`),
 
-    query: (queryRequest) => apiClient.post(`${API_PREFIX}/query/`, queryRequest)
+    query: (queryRequest) => apiClient.post(`${API_PREFIX}/query`, queryRequest)
 };

@@ -8,4 +8,9 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
+  server: {
+    // Vercel passes the port as an environment variable.
+    // We use it if available, otherwise fall back to 5173.
+    port: process.env.PORT ? Number(process.env.PORT) : 5173,
+  },
 })
