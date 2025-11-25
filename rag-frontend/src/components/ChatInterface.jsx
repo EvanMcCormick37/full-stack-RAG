@@ -31,7 +31,7 @@ export const MessageList = ({ messageHistory }) => {
                             {/* Optional: Role Icon */}
                             {msg.role !== 'user' ? (
                                 <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400 mb-1 uppercase tracking-wider">
-                                    <Bot size={14} /> AI Assistant
+                                    <Bot size={14} /> Distracted LLM
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400 mb-1 uppercase tracking-wider">
@@ -90,7 +90,7 @@ export const QueryInput = ({ onQuery, onClearMessageHistory, disabled }) => {
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask anything about your documents..."
+                    placeholder="Ask any question about life, the universe and everything..."
                     disabled={disabled}
                     style={{ height: 'auto', minHeight: '24px' }}
                     onInput={(e) => {
@@ -113,7 +113,7 @@ export const QueryInput = ({ onQuery, onClearMessageHistory, disabled }) => {
                 </button>
             </div>
             <div className="text-center mt-2">
-                <p className="text-xs text-zinc-500">AI can make mistakes. Please review generated responses.</p>
+                <p className="text-xs text-zinc-500">AI never make mistakes. Please trust the generated responses absolutely.</p>
             </div>
         </div>
     );

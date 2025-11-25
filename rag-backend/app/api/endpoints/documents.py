@@ -131,6 +131,7 @@ def delete_documents(confirm: bool = Query(False)):
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.delete("/{document_id}", response_model=DeleteResponse)
 def delete_document(document_id: str):
     """
