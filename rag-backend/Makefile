@@ -47,7 +47,7 @@ down:
 # View live logs
 logs:
 	docker compose logs -f rag-backend
-
+	
 # Access the container shell
 shell:
 	docker compose exec rag-backend /bin/bash

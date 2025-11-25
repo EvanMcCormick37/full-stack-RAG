@@ -1,10 +1,15 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://35.209.149.3:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_PREFIX = import.meta.env.VITE_API_PREFIX;
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
-    headers: {'Content-Type': 'application/json'}
+    headers: {
+        'Content-Type': 'application/json',
+        'API-Key': API_KEY
+    }
 });
 
 export const ragApi = {
@@ -14,7 +19,7 @@ export const ragApi = {
         const formData = new FormData();
         formData.append('file', file);
         return apiClient.post(
-            '/api/v1/documents/',
+            `${API_PREFIX}/documents/`,
             formData,
             {
                 headers: {'Content-Type': 'multipart/form-data'}
@@ -22,15 +27,15 @@ export const ragApi = {
         );
     },
 
-    listDocuments: () => apiClient.get('/api/v1/documents/'),
+    listDocuments: () => apiClient.get(`${API_PREFIX}/documents/`),
 
-    getDocument: (documentId) => apiClient.get(`/api/v1/documents/${documentId}`),
+    getDocument: (documentId) => apiClient.get(`${API_PREFIX}/documents/${documentId}`),
 
-    deleteAllDocuments: (confirmed=true) => apiClient.delete('/api/v1/documents/',
+    deleteAllDocuments: (confirmed=true) => apiClient.delete(`${API_PREFIX}/documents/`,
         {params: {confirm: confirmed}}
     ),
 
-    deleteDocument: (documentId) => apiClient.delete(`/api/v1/documents/${documentId}`),
+    deleteDocument: (documentId) => apiClient.delete(`${API_PREFIX}/documents/${documentId}`),
 
-    query: (queryRequest) => apiClient.post('/api/v1/query/', queryRequest)
+    query: (queryRequest) => apiClient.post(`${API_PREFIX}/query/`, queryRequest)
 };

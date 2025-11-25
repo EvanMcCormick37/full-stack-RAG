@@ -4,7 +4,9 @@ class Settings(BaseSettings):
     # API Configuration
     API_TITLE: str = "RAG LLM API"
     API_VERSION: str = "./temp"
-    API_PREFIX: str = "/api/v1"
+    API_PREFIX: str = "/api/v1.1"
+    API_KEY_NAME: str = "API-Key"
+    API_KEY: str
 
     # Upload
     UPLOAD_DIR: str = "./uploads"

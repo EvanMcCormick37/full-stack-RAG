@@ -23,6 +23,7 @@ htmlcov/
 # Data directories
 data/
 chroma/
+chroma-data/
 uploads/
 temp/
 

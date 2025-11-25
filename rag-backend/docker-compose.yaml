@@ -10,6 +10,7 @@ services:
     environment:
       # Sensitive Data
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - API_KEY=${API_KEY}
     # Blind-mount volumes from my VM for persistent data storage
     volumes:
       # Persist vector database
