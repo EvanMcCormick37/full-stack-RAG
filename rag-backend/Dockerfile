@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends gcc g++ build-e
 
 # Copy requirements.txt and build python dependencies, using wheel packages
 COPY requirements.txt .
-RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
+RUN pip wheel --no-cache-dir --wheel-dir /app/wheels -r requirements.txt
 
 # ============================================
 # Production stage
@@ -25,17 +25,23 @@ WORKDIR /app
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
 
-# Copy dependencies from wheel directory and install
-COPY --from=builder /app/wheels /wheels
-RUN pip install --no-cache /wheels/* && rm -rf /wheels
+# Mount dependencies from wheel directory and install
+COPY requirements.txt .
+RUN --mount=type=bind,from=builder,source=/app/wheels,target=/wheels pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt
 
-# Copy application code and tests
+# Copy application code
 COPY --chown=appuser:appuser ./app ./app
-COPY --chown=appuser:appuser ./test ./test
 
-# Set HuggingFace cache
+# Set Env directories
 ENV HF_HOME=/app/.hf_cache
+ENV UPLOAD_DIR=/app/uploads
+ENV TEMP_DIR=/app/temp
+ENV CHROMADB_PERSIST_DIR=/app/chroma
+
 RUN mkdir -p ${HF_HOME} && chown -R appuser:appuser ${HF_HOME}
+RUN mkdir -p ${UPLOAD_DIR} && chown -R appuser:appuser ${UPLOAD_DIR}
+RUN mkdir -p ${TEMP_DIR} && chown -R appuser:appuser ${TEMP_DIR}
+RUN mkdir -p ${CHROMADB_PERSIST_DIR} && chown -R appuser:appuser ${CHROMADB_PERSIST_DIR}
 
 # Set Python path
 ENV PATH=/root/.local/bin:$PATH

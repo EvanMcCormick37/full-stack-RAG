@@ -28,7 +28,7 @@ build:
 clean-build:
 	docker builder prune -f
 	docker image prune -f
-	docker compose build
+	docker compose buil
 
 # Start services in detached mode
 up:

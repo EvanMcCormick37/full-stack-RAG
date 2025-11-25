@@ -8,42 +8,17 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # Persistent directory Config
-      - UPLOAD_DIR=/app/uploads
-      - TEMP_DIR=/app/temp
-      - CHROMADB_PERSIST_DIR=/app/chroma
-      
       # Sensitive Data
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-    
+    # Blind-mount volumes from my VM for persistent data storage
     volumes:
       # Persist vector database
-      - chroma-data:/app/chroma
-      # Persist uploads (optional - for debugging)
-      - upload-data:/app/uploads
-      # Temporary files (cleared on restart)
-      - temp-data:/app/temp
-    
+      - ./chroma-data:/app/chroma
+    healthcheck:
+      disable: false
     networks:
       - rag-network
-    
     restart: unless-stopped
-    
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-# Named volumes for data persistence
-volumes:
-  chroma-data:
-    driver: local
-  upload-data:
-    driver: local
-  temp-data:
-    driver: local
 
 # Network for service communication
 networks:

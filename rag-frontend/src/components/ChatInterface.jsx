@@ -90,7 +90,7 @@ export const QueryInput = ({ onQuery, onClearMessageHistory, disabled }) => {
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask any question about life, the universe and everything..."
+                    placeholder="Ask me a question about life, the universe or everything..."
                     disabled={disabled}
                     style={{ height: 'auto', minHeight: '24px' }}
                     onInput={(e) => {
