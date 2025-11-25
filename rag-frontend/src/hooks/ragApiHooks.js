@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ragApi } from "../api/ragApi";
+import { ragApi } from "../api-js/ragApi";
 
 export const useDocuments = () => {
     const [documents, setDocuments] = useState([]);
