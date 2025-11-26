@@ -1,18 +1,18 @@
 // Vercel Serverless Function - Proxies requests to HTTP backend
 
+// Note: Replace with your actual backend IP
 const BACKEND_URL = 'http://35.209.149.3:8000';
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // Critical for file uploads
     responseLimit: false,
   },
 };
 
 export default async function handler(req, res) {
   // 1. RECOVER THE ORIGINAL URL
-  // The rewrite passed the original path in the '_path' query param.
-  // We use that, or fall back to req.url if it's missing.
+  // The 'routes' rule passed the original path in the '_path' query param.
   let targetPath = req.query._path;
   
   // Handle array or string cases for query params
@@ -20,14 +20,14 @@ export default async function handler(req, res) {
     targetPath = targetPath.join('/');
   }
   
-  // If _path wasn't passed, fallback to the raw URL
+  // Safety fallback
   if (!targetPath) {
-    targetPath = req.url;
+    targetPath = req.url; 
   }
 
   // 2. RECONSTRUCT QUERY PARAMETERS
-  // Vercel puts the original query params (like ?confirm=true) into req.query.
-  // We need to rebuild the query string, but exclude our internal '_path' param.
+  // Vercel merges the original query params (like ?confirm=true) into req.query.
+  // We must rebuild the string but EXCLUDE our internal '_path' param.
   const queryParams = new URLSearchParams();
   Object.keys(req.query).forEach(key => {
     if (key !== '_path') {
