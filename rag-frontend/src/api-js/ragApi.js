@@ -34,7 +34,7 @@ export const ragApi = {
         {params: {confirm: confirmed}}
     ),
 
-    deleteDocument: (documentId) => apiClient.delete(`$/api/v1.1/documents/${documentId}`),
+    deleteDocument: (documentId) => apiClient.delete(`/api/v1.1/documents/${documentId}`),
 
     query: (queryRequest) => apiClient.post('/api/v1.1/query', queryRequest)
 };
