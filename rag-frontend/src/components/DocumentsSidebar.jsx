@@ -69,7 +69,7 @@ const UploadDocumentWidget = ({ onUploadDocument, isLoading, error }) => {
             <button
                 className={`
                     w-full mt-3 py-2 px-4 rounded-lg text-sm font-medium transition-all
-                    ${!selectedFile || isLoading 
+                    ${!selectedFile || isLoading || error
                         ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' 
                         : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-900/20'}
                 `}
