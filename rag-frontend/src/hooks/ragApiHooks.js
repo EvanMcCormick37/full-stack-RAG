@@ -12,7 +12,7 @@ export const useDocuments = () => {
             const response = await ragApi.listDocuments();
             setDocuments(response.data.documents ?? []);
         } catch (err) {
-            setError(`${err.message} ${err.response?.data?.detail ??''}`);
+            setError(`${err.message} ${err.response?.data?.detail ?? err.response?.data?.message ?? ''}`);
         } finally {
             setLoading(false);
         }
@@ -24,7 +24,7 @@ export const useDocuments = () => {
             await ragApi.uploadDocument(file);
             await fetchDocuments();
         } catch (err) {
-            setError(`${err.message} ${err.response?.data?.detail ??''}`);
+            setError(`${err.message} ${err.response?.data?.detail ?? err.response?.data?.message ?? ''}`);
         } finally {
             setLoading(false);
         }
@@ -36,7 +36,7 @@ export const useDocuments = () => {
             const response = await ragApi.getDocument(documentId);
             return response.data;
         } catch (err) {
-            setError(`${err.message} ${err.response?.data?.detail ??''}`);
+            setError(`${err.message} ${err.response?.data?.detail ?? err.response?.data?.message  ??''}`);
         } finally {
             setLoading(false);
         }
@@ -48,7 +48,7 @@ export const useDocuments = () => {
             await ragApi.deleteDocument(documentId);
             await fetchDocuments();
         } catch (err) {
-            setError(`${err.message} ${err.response?.data?.detail ??''}`);
+            setError(`${err.message} ${err.response?.data?.detail ?? err.response?.data?.message  ??''}`);
         } finally {
             setLoading(false);
         }
@@ -60,7 +60,7 @@ export const useDocuments = () => {
             await ragApi.deleteAllDocuments();
             await fetchDocuments();
         } catch (err) {
-            setError(`${err.message} ${err.response?.data?.detail ??''}`);
+            setError(`${err.message} ${err.response?.data?.detail ?? err.response?.data?.message  ??''}`);
         } finally {
             setLoading(false);
         }
@@ -101,7 +101,7 @@ export const useQuery = () => {
             ]));
             setContext(response.context || null);
         } catch (err) {
-            setError(`${err.message} ${err.response?.data?.detail ??''}`);
+            setError(`${err.message} ${err.response?.data?.detail ?? err.response?.data?.message  ??''}`);
         } finally {
             setLoading(false);
         }
