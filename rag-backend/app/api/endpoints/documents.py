@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Query
 from datetime import datetime
 import traceback
 from app.models.schemas import DocumentListResponse, DocumentMetadata, DeleteResponse, UploadResponse
-from app.services import file_service, rag_service
+from app.services import file_service, rag_service, metadata_service
 import logging
 
 logger = logging.getLogger(__name__)
@@ -92,7 +92,7 @@ def get_document(document_id: str):
         DocumentMetadata for the matching document if it exists.
     """
     try:
-        document = rag_service.get_document(document_id)
+        document = metadata_service.get_document(document_id)
         
         if not document:
             raise HTTPException(
@@ -119,10 +119,8 @@ def delete_documents(confirm: bool = Query(False)):
         bool indicating whether deletion was successful
     """
     try:
-        success = rag_service.delete_all_documents()
-        return DeleteResponse(
-            deleted=success
-        )
+        rag_service.delete_all_documents()
+        return DeleteResponse(deleted=True)
     except HTTPException:
         raise
     except Exception as e:
@@ -144,17 +142,8 @@ def delete_document(document_id: str):
     """
     try:
         # Get document info
-        success = rag_service.delete_document(document_id)
-        
-        if not success:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Document {document_id} not deleted successfully."
-            )
-        
-        return DeleteResponse(
-            deleted=True
-        )
+        rag_service.delete_document(document_id)
+        return DeleteResponse(deleted=True)
         
     except HTTPException:
         raise

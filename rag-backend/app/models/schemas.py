@@ -18,6 +18,7 @@ class DocumentMetadata(BaseModel):
     last_accessed: datetime         # The time in which the document was last accessed
     session_id: str                 # The session ID in which the document was uploaded
     num_chunks: int                 # The number of chunks the document was split into
+    status: DocumentStatus          # The upload status of the document
 
 
 class UploadResponse(BaseModel):
@@ -26,19 +27,18 @@ class UploadResponse(BaseModel):
 
 class QueryRequest(BaseModel):
     question: str = Field(..., min_length=3, max_length=500)        # The question the user is asking the LLM
-    return_context: bool = False                                    # Whether to return just the response, or the response and context
 
 
 class Source(BaseModel):
-    document_id: str                    # The document ID of the source document
-    filename: str                       # The name of the source document
-    upload_time: datetime               # The time which the source file was added to the database
-    chunk_text: str                     # The raw context text
+    chunk_id: str                       # The chunk text ID
+    document_id: str                    # The document ID associated with the chunk text
+    chunk_text: str                     # The raw chunk text
 
 
 class QueryResponse(BaseModel):
     answer: str                         # The answer returned by the LLM client
-    context: List[Source] = None        # The sources retrieved by the RAG model
+    sources: List[Source]               # The sources retrieved by the RAG model
+    document_metadatas: List[DocumentMetadata]   # The document sources used by the RAG model for this query
 
 
 # List Documents Schemas

@@ -5,8 +5,7 @@ import chromadb
 from chromadb import QueryResult
 
 from app.config import settings
-from app.services import document_service, metadata_service
-from app.core.interfaces import LLMClient
+from app.services import document_service, metadata_service, llm_client
 from app.core.exceptions import VectorStoreError
 from app.models.schemas import Source, QueryResponse, DocumentListResponse, DocumentMetadata
 import logging
@@ -23,13 +22,9 @@ class RAGService:
         - MetadataService: Stores document metadata (filename, timestamps, etc.)
     """
 
-    def __init__(
-        self,
-        llm_client: LLMClient,
-    ):
+    def __init__(self):
         logger.info("Initializing RAG Service...")
-        
-        self._llm_client = llm_client
+
         self._embedding_model = SentenceTransformer(settings.EMBEDDING_MODEL)
         self._client = chromadb.PersistentClient(
             path = settings.CHROMADB_PERSIST_DIR
@@ -93,7 +88,7 @@ class RAGService:
 
             return len(chunks)
         except Exception as e:
-            raise VectorStoreError(f"Failed to add document chunks to the database: {str(e)}")
+            raise VectorStoreError(f"Failed to add document to one of the databases (SQLite document-metadata or ChromaDB chunk storage): {str(e)}")
     
 
     def query(
@@ -119,75 +114,19 @@ class RAGService:
         )
 
         sources = self._convert_chromadb_queryresult_to_sources(chromadb_queryresult)
-        self.update_access_times(sources)
+        documents = self.update_access_times(sources)
 
-        answer = self._llm_client.answer(
+        answer = llm_client.answer(
             question,
             sources
         )
 
         return QueryResponse(
             answer = answer,
-            context = sources
+            sources = sources,
+            document_metadatas = documents
         )
     
-
-    def list_documents(self) -> DocumentListResponse:
-        """
-        Get a list of unique document sources in the vector store.
-        
-        Returns:
-            DocumentList of document filenames
-        """
-        # Get all document records
-        records = metadata_service.get_all_documents()
-
-        if not records or len(records) == 0:
-            return DocumentListResponse(
-                documents = None,
-                count = 0
-            )
-        
-        # Get DocumentMetadata for each document record
-        document_metadatas = [
-            DocumentMetadata(
-                document_id=r.document_id,
-                filename=r.filename,
-                upload_time=r.upload_time,
-                last_accessed=r.last_accessed,
-                session_id=r.session_id,
-                num_chunks=r.num_chunks
-            ) for r in records
-        ]
-
-        return DocumentListResponse(
-            documents = document_metadatas,
-            count = len(document_metadatas)
-        )
-
-
-    def get_document(self, document_id: str) -> DocumentMetadata | None:
-        """
-        Get the metadata for a single document from the vector store.
-
-        Params:
-            - document_id - The ID of the document to get metadata for
-
-        Returns:
-            DocumentMetadata with the metadata for the document ID
-        """
-        record = metadata_service.get_document(document_id)
-        if record:
-            return DocumentMetadata(
-                document_id=record.document_id,
-                filename=record.filename,
-                upload_time=record.upload_time,
-                last_accessed=record.last_accessed,
-                session_id=record.session_id,
-                num_chunks=record.num_chunks
-            )
-        return None
-
 
     def delete_document(self, document_id: str) -> None:
         '''
@@ -227,32 +166,38 @@ class RAGService:
 
         sources = []
         for chunk_text, document_id in zip(chunk_texts, document_ids):
-            doc_record = metadata_service.get_document(document_id)
+            doc = metadata_service.get_document(document_id)
 
-            if doc_record:
+            if doc:
                 sources.append(
                     Source(
                         document_id = document_id,
-                        filename = doc_record.filename,
-                        upload_time = doc_record.upload_time,
+                        filename = doc.filename,
+                        upload_time = doc.upload_time,
                         chunk_text = chunk_text
                     ))
 
         return sources
     
 
-    def update_access_times(self, sources: List[Source]) -> None:
+    def update_access_times(self, sources: List[Source]) -> List[DocumentMetadata]:
         """
-        Update last_accessed timestamps for all retrieved documents, in document-records SQLite db.
+        Update last_accessed timestamps for all retrieved sources, in document-records SQLite db, and get DocumentMetadatas for retrieved sources.
 
         ### Params:
             - sources: List[Source] - The Sources retrieved from ChromaDB. Update last_accessed timestamp on all associated document records.
+        
+        ### Returns:
+            - List[DocumentMetadata] - The DocumentMetadatas for the given list of sources.
         """
         seen_doc_ids = Set()
+        seen_doc_metadatas = []
         for source in sources:
             if source.document_id not in seen_doc_ids:
                 metadata_service.update_last_accessed(source.document_id)
                 seen_doc_ids.add(source.document_id)
+                seen_doc_metadatas.append(metadata_service.get_document(source.document_id))
+        return seen_doc_metadatas    
     
 
     def maybe_auto_delete(self) -> None:

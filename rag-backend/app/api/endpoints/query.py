@@ -16,11 +16,7 @@ def query(request: QueryRequest):
         request - A QueryRequest with the question, prompt-style, optional metadata filter, n_results, and return_context.
     """
     try:
-        response = rag_service.query(
-            question = request.question,
-            n_results = request.n_results,
-            return_context = request.return_context
-        )
+        response = rag_service.query(request.question)
         return response
     except Exception as e:
         logger.error(f"Error querying the RAG pipeline. {str(e)}")
