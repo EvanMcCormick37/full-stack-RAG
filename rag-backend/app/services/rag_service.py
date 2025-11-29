@@ -5,11 +5,9 @@ import chromadb
 from chromadb import QueryResult
 
 from app.config import settings
-from app.services import document_service
+from app.services import document_service, metadata_service
 from app.core.interfaces import LLMClient
-from app.core.exceptions import (
-    VectorStoreError,
-)
+from app.core.exceptions import VectorStoreError
 from app.models.schemas import Source, QueryResponse, PromptStyle, DocumentListResponse, DocumentMetadata
 import logging
 
@@ -100,48 +98,38 @@ class RAGService:
 
     def query(
         self,
-        question: str,
-        style: PromptStyle,
-        n_results: Optional[int] = None,
-        return_context: Optional[bool] = None
+        question: str
     ) -> QueryResponse:
         """
         Query the RAG system for a response with context.
 
         Params:
-            question - The user's question
-            n_results - Optional number of context chunks the user wants to use as context.
+            - question - The user's question
+            - n_results - Optional number of context chunks the user wants to use as context.
 
         Returns:
-            QueryResponse with answer, sources, and metadata
+            - QueryResponse with answer, sources, and metadata
         """
-
-        n_results = int(n_results) if n_results else int(settings.N_SEARCH_RESULTS)
-        return_context = bool(return_context) if return_context else bool(settings.RETURN_CONTEXT)
-
-        logger.info(f"Processing query: {question[:100]}...")
+        logger.info(f"Processing query: {question}...")
 
         embedding = self._embedding_model.encode(question)
-
         chromadb_queryresult = self._vector_database.query(
             query_embeddings = embedding,
-            n_results = n_results
+            n_results = settings.N_SEARCH_RESULTS
         )
-
 
         sources = self._convert_chromadb_queryresult_to_sources(chromadb_queryresult)
+        self.update_access_times(sources)
+
         answer = self._llm_client.answer(
             question,
-            sources,
-            style
+            sources
         )
 
-        response = QueryResponse(
+        return QueryResponse(
             answer = answer,
-            context = (sources if return_context else None)
+            context = sources
         )
-
-        return response
     
 
     def list_documents(self) -> DocumentListResponse:
@@ -151,34 +139,31 @@ class RAGService:
         Returns:
             DocumentList of document filenames
         """
-        # Get all chunk metadatas
-        all_chunks = self._vector_database.get()
-        all_metadatas = all_chunks['metadatas']
+        # Get all document records
+        records = metadata_service.get_all_documents()
 
-        # If there are no chunks in the vector db return empty DocumentListResponse
-        if len(all_metadatas) == 0:
+        if not records or len(records) == 0:
             return DocumentListResponse(
                 documents = None,
-                storage_space=0,
                 count = 0
             )
         
-        # Extract unique document ids
-        document_ids = set()
-        for metadata in all_metadatas:
-            document_ids.add(metadata['document_id'])
-        
-        # Get DocumentMetadata for each unique document id in document ids.
+        # Get DocumentMetadata for each document record
         document_metadatas = [
-            self.get_document(doc_id) for doc_id in sorted(list(document_ids))
+            DocumentMetadata(
+                document_id=r.document_id,
+                filename=r.filename,
+                upload_time=r.upload_time,
+                last_accessed=r.last_accessed,
+                session_id=r.session_id,
+                num_chunks=r.num_chunks
+            ) for r in records
         ]
 
-        response = DocumentListResponse(
+        return DocumentListResponse(
             documents = document_metadatas,
             count = len(document_metadatas)
         )
-        
-        return response
 
 
     def get_document(self, document_id: str) -> DocumentMetadata | None:
@@ -186,69 +171,45 @@ class RAGService:
         Get the metadata for a single document from the vector store.
 
         Params:
-            document_id - The ID of the document to get metadata for
+            - document_id - The ID of the document to get metadata for
 
         Returns:
             DocumentMetadata with the metadata for the document ID
         """
-        chunks = self._vector_database.get(
-            where={'document_id': document_id}
+        record = metadata_service.get_document(document_id)
+        if record:
+            return DocumentMetadata(
+                document_id=record.document_id,
+                filename=record.filename,
+                upload_time=record.upload_time,
+                last_accessed=record.last_accessed,
+                session_id=record.session_id,
+                num_chunks=record.num_chunks
             )
-        metadatas = chunks['metadatas']
-        if len(metadatas) > 0:
-            metadata = metadatas[0]
-            response = DocumentMetadata(
-                document_id = document_id,
-                filename = metadata['filename'],
-                upload_time = datetime.fromtimestamp(metadata['upload_time']),
-                num_chunks=len(metadatas)
-            )
-            return response
         return None
 
 
-    def delete_document(self, document_id: str) -> bool:
+    def delete_document(self, document_id: str) -> None:
         '''
         Delete a document from the vector store.
 
         Params:
-            document_id - The ID of the document to be deleted.
-
-        Returns:
-            bool representing the success of the deletion. True -> success, False -> failure
+            - document_id - The ID of the document to be deleted.
         '''
-        self._vector_database.delete(
-            where={"document_id": document_id}
-        )
-
-        results = self._vector_database.get(
-            where={"document_id": document_id}
-            )
-        
-        if len(results['ids']) > 0:
-            return False
-
-        return True
+        self._vector_database.delete(where={"document_id": document_id})
+        metadata_service.delete_document(document_id)
     
 
-    def delete_all_documents(self) -> bool:
+    def delete_all_documents(self) -> None:
         '''
         Delete all documents from the vector store.
         
         Returns:
             bool representing the success of deletion.
         '''
-        self._client.delete_collection(
-            settings.COLLECTION_NAME
-        )
-        self._vector_database = self._client.get_or_create_collection(
-            settings.COLLECTION_NAME
-        )
-        
-        if self.list_documents().count > 0:
-            return False
-
-        return True
+        self._client.delete_collection(settings.COLLECTION_NAME)
+        self._vector_database = self._client.get_or_create_collection(settings.COLLECTION_NAME)
+        metadata_service.delete_all_documents()
 
 
     def _convert_chromadb_queryresult_to_sources(self, chromadb_queryresult: QueryResult) -> List[Source]:
@@ -261,15 +222,56 @@ class RAGService:
         Returns:
             A list of Sources generated from the QueryResult.
         '''
-        documents = chromadb_queryresult['documents'][0]
-        metadatas = chromadb_queryresult['metadatas'][0]
+        chunk_texts = chromadb_queryresult['documents'][0]
+        document_ids = [metadata['document_id'] for metadata in chromadb_queryresult['metadatas'][0]]
 
-        sources = [
-            Source(
-                document_id = metadata['document_id'],
-                filename = metadata['filename'],
-                upload_time = datetime.fromtimestamp(metadata['upload_time']),
-                chunk_text = document
-            ) for (document, metadata) in zip(documents, metadatas)]
+        sources = []
+        for chunk_text, document_id in zip(chunk_texts, document_ids):
+            doc_record = metadata_service.get_document(document_id)
+
+            if doc_record:
+                sources.append(
+                    Source(
+                        document_id = document_id,
+                        filename = doc_record.filename,
+                        upload_time = doc_record.upload_time,
+                        chunk_text = chunk_text
+                    ))
 
         return sources
+    
+
+    def update_access_times(self, sources: List[Source]) -> None:
+        """
+        Update last_accessed timestamps for all retrieved documents, in document-records SQLite db.
+
+        ### Params:
+            - sources: List[Source] - The Sources retrieved from ChromaDB. Update last_accessed timestamp on all associated document records.
+        """
+        seen_doc_ids = Set()
+        for source in sources:
+            if source.document_id not in seen_doc_ids:
+                metadata_service.update_last_accessed(source.document_id)
+                seen_doc_ids.add(source.document_id)
+    
+
+    def maybe_auto_delete(self) -> None:
+        """Delete least accessed documents if storage exceeds maximum storage threshold"""
+        while self._vector_database.count() > settings.MAX_VECTOR_CHUNKS:
+            stale_doc = metadata_service.get_most_stale_document()
+            self.delete_document(stale_doc.document_id)
+    
+
+    def is_owner(self, document_id: str, session_id: str) -> bool:
+        """
+        Check if a session owns a document (i.e. that document was created within that session).
+        
+        ### Params:
+            - document_id: str - The document ID
+            - session_id: str - The session ID
+        
+        ### Returns:
+            Boolean determining whether the session owns the document.
+        """
+        record = metadata_service.get_document(document_id)
+        return (record is not None and record.session_id == session_id)

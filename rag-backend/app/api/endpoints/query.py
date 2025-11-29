@@ -18,7 +18,6 @@ def query(request: QueryRequest):
     try:
         response = rag_service.query(
             question = request.question,
-            style = request.style,
             n_results = request.n_results,
             return_context = request.return_context
         )

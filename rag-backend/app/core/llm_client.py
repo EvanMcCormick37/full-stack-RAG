@@ -20,7 +20,7 @@ class LLMClient:
         Validate the input prompt.
         
         Args:
-            prompt: User's prompt text
+            - prompt - User's prompt
             
         Raises:
             ValueError: If prompt is invalid
@@ -57,18 +57,16 @@ class LLMClient:
     def answer(
             self,
             question: str,
-            sources: List[Source],
-            style: PromptStyle
-            ) -> str:
+            sources: List[Source]
+        ) -> str:
         '''
         Answer a user's question with the given sources and prompt-style. Generates a 'context-prompt' which the LLM answers.
 
-        Params:
-            Question - The user's question
-            Sources - Text chunks from the database to provide context to the user's question
-            Style - The style in which the LLM should answer. There are multiple 'style' options, each tied to a context prompt template designed to elicit a particular conversational style from the LLM.
+        ### Params:
+            - Question - The user's question
+            - Sources - Text chunks from the database to provide context to the user's question
         
-        Returns:
+        ### Returns:
             The LLM's answer to the context prompt.
         '''
         context = ",\n".join([f"{src.chunk_text}\n(Source: {src.filename})" for src in sources])
