@@ -8,7 +8,7 @@ from app.config import settings
 from app.services import document_service, metadata_service
 from app.core.interfaces import LLMClient
 from app.core.exceptions import VectorStoreError
-from app.models.schemas import Source, QueryResponse, PromptStyle, DocumentListResponse, DocumentMetadata
+from app.models.schemas import Source, QueryResponse, DocumentListResponse, DocumentMetadata
 import logging
 
 logger = logging.getLogger(__name__)

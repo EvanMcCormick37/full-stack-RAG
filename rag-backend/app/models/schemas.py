@@ -10,11 +10,6 @@ class DocumentStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
 
-class PromptStyle(str, Enum):
-    ANSWER = "answer"
-    ANALOGIZE = "analogize"
-    DISTRACT = "distract"
-
 # Upload Schemas
 class DocumentMetadata(BaseModel):
     document_id: str                # The document id

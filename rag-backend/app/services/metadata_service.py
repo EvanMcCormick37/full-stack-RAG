@@ -126,7 +126,3 @@ class MetadataService:
         with Session(engine) as session:
             statement = select(DocumentRecord)
             return len(session.exec(statement).all())
-        
-
-# Export singleton instance
-metadata_service = MetadataService()
