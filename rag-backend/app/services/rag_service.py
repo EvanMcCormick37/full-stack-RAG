@@ -190,7 +190,7 @@ class RAGService:
         ### Returns:
             - List[DocumentMetadata] - The DocumentMetadatas for the given list of sources.
         """
-        seen_doc_ids = Set()
+        seen_doc_ids = set()
         seen_doc_metadatas = []
         for source in sources:
             if source.document_id not in seen_doc_ids:
