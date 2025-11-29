@@ -50,11 +50,14 @@ class MetadataService:
             return self._document_metadata(session.get(DocumentRecord, document_id))
     
 
-    def get_all_documents(self) -> List[DocumentMetadata]:
+    def get_all_documents(self, session_id: Optional[str] = None) -> Optional[List[DocumentMetadata]]:
         """Retrieve all document records from the database."""
         with Session(engine) as session:
             statement = select(DocumentRecord).order_by(DocumentRecord.upload_time.desc())
-            return [self._document_metadata(r) for r in session.exec(statement).all()]
+            docs = [self._document_metadata(r) for r in session.exec(statement).all()]
+            if session_id is None:
+                return docs
+            return [doc for doc in docs if doc.session_id == session_id]
     
 
     def get_documents_by_session(self, session_id: str) -> List[DocumentMetadata]:
@@ -126,7 +129,7 @@ class MetadataService:
             return len(session.exec(statement).all())
 
     
-    def list_documents(self) -> DocumentListResponse:
+    def list_documents(self, session_id: Optional[str]) -> DocumentListResponse:
         """
         Get a list of unique document sources in the vector store.
         
@@ -135,7 +138,7 @@ class MetadataService:
         """
         
         # Get all document records
-        docs = self.get_all_documents()
+        docs = self.get_all_documents(session_id)
         count = len(docs)
         # Return None instead of docs if docs is empty
         return DocumentListResponse(

@@ -6,7 +6,6 @@ from fastapi.responses import JSONResponse
 from app.config import settings
 from app.api.endpoints import query, documents
 from app.core.exceptions import RAGException
-from app.db import init_db
 import logging
 import os
 
@@ -32,8 +31,6 @@ async def lifespan(app: FastAPI):
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs(settings.TEMP_DIR, exist_ok=True)
 
-    # Initialize SQLite database
-    init_db()
 
     logger.info("RAG startup complete.")
     yield

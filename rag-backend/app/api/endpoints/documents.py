@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Query
 from datetime import datetime
+from typing import Optional
 import traceback
 from app.models.schemas import DocumentListResponse, DocumentMetadata, DeleteResponse, UploadResponse
 from app.services import file_service, rag_service, metadata_service
@@ -18,7 +19,8 @@ async def documents_health():
 
 @router.post("/", response_model = UploadResponse)
 def upload_document(
-    file: UploadFile = File(...)
+    file: UploadFile,
+    session_id: str
 ):
     '''
     Upload and process a document
@@ -39,9 +41,9 @@ def upload_document(
         num_chunks = rag_service.process_document(
             document_id,
             file.filename,
-            file.size,
             file_path,
-            upload_time
+            upload_time,
+            session_id
         )
 
         file_service.delete_file(file_path)
@@ -64,7 +66,7 @@ def upload_document(
 
 
 @router.get("/", response_model = DocumentListResponse)
-def list_documents():
+def list_documents(session_id: Optional[str] = None):
     '''
     List all uploaded documents
 
@@ -72,7 +74,7 @@ def list_documents():
         DocumentList
     '''
     try:
-        return rag_service.list_documents()
+        return metadata_service.list_documents(session_id)
         
     except Exception as e:
         logger.error(f"Error listing documents: {str(e)}")
@@ -111,7 +113,7 @@ def get_document(document_id: str):
 
 
 @router.delete("/", response_model=DeleteResponse)
-def delete_documents(confirm: bool = Query(False)):
+def delete_documents(session_id: Optional[str] = None):
     """
     Delete all documents from the vector database
     
@@ -119,7 +121,7 @@ def delete_documents(confirm: bool = Query(False)):
         bool indicating whether deletion was successful
     """
     try:
-        rag_service.delete_all_documents()
+        rag_service.delete_all_documents(session_id)
         return DeleteResponse(deleted=True)
     except HTTPException:
         raise
@@ -130,7 +132,7 @@ def delete_documents(confirm: bool = Query(False)):
 
 
 @router.delete("/{document_id}", response_model=DeleteResponse)
-def delete_document(document_id: str):
+def delete_document(document_id: str, session_id: Optional[str] = None):
     """
     Delete a document and remove it from the index
 
@@ -142,7 +144,7 @@ def delete_document(document_id: str):
     """
     try:
         # Get document info
-        rag_service.delete_document(document_id)
+        rag_service.delete_document(document_id, session_id)
         return DeleteResponse(deleted=True)
         
     except HTTPException:

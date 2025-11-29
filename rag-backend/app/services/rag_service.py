@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from sentence_transformers import SentenceTransformer
 import chromadb
 from chromadb import QueryResult
@@ -78,7 +78,7 @@ class RAGService:
                 ids = chunk_ids
             )
             
-            self.metadata_service.create_document(
+            self._metadata_service.create_document(
                 document_id=document_id,
                 filename=filename,
                 upload_time=upload_time,
@@ -119,7 +119,7 @@ class RAGService:
         sources = self._convert_chromadb_queryresult_to_sources(chromadb_queryresult)
         documents = self.update_access_times(sources)
 
-        answer = llm_client.answer(
+        answer = self._llm_client.answer(
             question,
             sources
         )
@@ -139,19 +139,25 @@ class RAGService:
             - document_id - The ID of the document to be deleted.
         '''
         self._vector_database.delete(where={"document_id": document_id})
-        self.metadata_service.delete_document(document_id)
+        self._metadata_service.delete_document(document_id)
     
 
-    def delete_all_documents(self) -> None:
+    def delete_all_documents(self, session_id: Optional[str]) -> None:
         '''
-        Delete all documents from the vector store.
+        Delete all documents from the vector store. (Filtered on session-id if called by an individual session)
         
         Returns:
             bool representing the success of deletion.
         '''
-        self._client.delete_collection(settings.COLLECTION_NAME)
-        self._vector_database = self._client.get_or_create_collection(settings.COLLECTION_NAME)
-        self.metadata_service.delete_all_documents()
+        if session_id is None:
+            self._client.delete_collection(settings.COLLECTION_NAME)
+            self._vector_database = self._client.get_or_create_collection(settings.COLLECTION_NAME)
+            self._metadata_service.delete_all_documents()
+        else:
+            doc_ids = self._metadata_service.get_documents_by_session(session_id)
+            for doc_id in doc_ids:
+                self._vector_database.delete(where={'document_id':doc_id})
+                self._metadata_service.delete_document(doc_id)
 
 
     def _convert_chromadb_queryresult_to_sources(self, chromadb_queryresult: QueryResult) -> List[Source]:
@@ -169,7 +175,7 @@ class RAGService:
 
         sources = []
         for chunk_text, document_id in zip(chunk_texts, document_ids):
-            doc = self.metadata_service.get_document(document_id)
+            doc = self._metadata_service.get_document(document_id)
 
             if doc:
                 sources.append(
@@ -197,16 +203,16 @@ class RAGService:
         seen_doc_metadatas = []
         for source in sources:
             if source.document_id not in seen_doc_ids:
-                self.metadata_service.update_last_accessed(source.document_id)
+                self._metadata_service.update_last_accessed(source.document_id)
                 seen_doc_ids.add(source.document_id)
-                seen_doc_metadatas.append(self.metadata_service.get_document(source.document_id))
+                seen_doc_metadatas.append(self._metadata_service.get_document(source.document_id))
         return seen_doc_metadatas    
     
 
     def maybe_auto_delete(self) -> None:
         """Delete least accessed documents if storage exceeds maximum storage threshold"""
         while self._vector_database.count() > settings.MAX_VECTOR_CHUNKS:
-            stale_doc = self.metadata_service.get_most_stale_document()
+            stale_doc = self._metadata_service.get_most_stale_document()
             self.delete_document(stale_doc.document_id)
     
 
@@ -221,5 +227,5 @@ class RAGService:
         ### Returns:
             Boolean determining whether the session owns the document.
         """
-        record = self.metadata_service.get_document(document_id)
+        record = self._metadata_service.get_document(document_id)
         return (record is not None and record.session_id == session_id)
