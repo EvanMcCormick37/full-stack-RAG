@@ -50,7 +50,6 @@ def upload_document(
             document_metadata = DocumentMetadata(
                 document_id = document_id,
                 filename = file.filename,
-                file_size = file.size,
                 upload_time = upload_time,
                 num_chunks = num_chunks
             )

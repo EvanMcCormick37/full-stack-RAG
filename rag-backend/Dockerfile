@@ -34,14 +34,10 @@ COPY --chown=appuser:appuser ./app ./app
 
 # Set Env directories
 ENV HF_HOME=/app/.hf_cache
-ENV UPLOAD_DIR=/app/uploads
-ENV TEMP_DIR=/app/temp
-ENV CHROMADB_PERSIST_DIR=/app/chroma
 
+# Make important directories and add write permissions for app
 RUN mkdir -p ${HF_HOME} && chown -R appuser:appuser ${HF_HOME}
-RUN mkdir -p ${UPLOAD_DIR} && chown -R appuser:appuser ${UPLOAD_DIR}
-RUN mkdir -p ${TEMP_DIR} && chown -R appuser:appuser ${TEMP_DIR}
-RUN mkdir -p ${CHROMADB_PERSIST_DIR} && chown -R appuser:appuser ${CHROMADB_PERSIST_DIR}
+RUN mkdir -p /app/uploads /app/temp && chown -R appuser:appuser /app/uploads /app/temp
 
 # Set Python path
 ENV PATH=/root/.local/bin:$PATH

@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 class RAGService:
     """
     Orchestrates document processing, embedding generation, context retrieval, and LLM question-answering.
+    
+    Architecture:
+        - ChromaDB: Stores embeddings + chunk text + document_id reference
+        - MetadataService: Stores document metadata (filename, timestamps, etc.)
     """
 
     def __init__(
@@ -43,19 +47,19 @@ class RAGService:
         self,
         document_id: str,
         filename: str,
-        file_size: int,
         file_path: str,
-        upload_time: datetime
+        upload_time: datetime,
+        session_id: str
     ) -> int:
         '''
-        Processes a single document
+        Processes a single document. Stores chunks, embeddings in ChromaDB, document metadata in SQLite.
 
         Params:
-            document_id - Document ID of document
-            filename - The name of the document file
-            file_size - The size of the document file in bytes
-            file_path - Path to document file
-            upload_time - The time which the document file was uploaded
+            - document_id - Document ID of document
+            - filename - The name of the document file
+            - file_path - Path to document file
+            - upload_time - The time which the document was uploaded
+            - session_id - The session in which the document was uploaded, useful for determining user access and deletion privileges
 
         Returns:
             The number of chunks the document was chunked into.
@@ -67,23 +71,28 @@ class RAGService:
             show_progress_bar = True,
             convert_to_numpy = True
         )
-        document_metadata = {
-            'document_id': document_id,
-            'filename': filename,
-            'file_size': file_size,
-            'upload_time': upload_time.timestamp()  # Must convert datetime to float because chromadb doesn't store datetime values.
-            }
-        metadatas = [document_metadata]*len(chunks)
+        chunk_metadatas = [{"document_id": document_id}] * len(chunks)
         chunk_ids = [f"{document_id}_{i}" for i in range(len(chunks))]
 
         try:
             self._vector_database.add(
                 documents = chunks,
                 embeddings = embeddings,
-                metadatas = metadatas,
+                metadatas = chunk_metadatas,
                 ids = chunk_ids
             )
             
+            metadata_service.create_document(
+                document_id=document_id,
+                filename=filename,
+                upload_time=upload_time,
+                session_id=session_id,
+                num_chunks=len(chunks),
+                status="processing"
+            )
+            # Check for possible auto-deletion of old documents if ChromaDB has grown too large
+            self.maybe_auto_delete()
+
             return len(chunks)
         except Exception as e:
             raise VectorStoreError(f"Failed to add document chunks to the database: {str(e)}")
@@ -166,7 +175,6 @@ class RAGService:
 
         response = DocumentListResponse(
             documents = document_metadatas,
-            storage_space = sum([doc.file_size for doc in document_metadatas]),
             count = len(document_metadatas)
         )
         
@@ -192,7 +200,6 @@ class RAGService:
             response = DocumentMetadata(
                 document_id = document_id,
                 filename = metadata['filename'],
-                file_size = metadata['file_size'],
                 upload_time = datetime.fromtimestamp(metadata['upload_time']),
                 num_chunks=len(metadatas)
             )
@@ -261,7 +268,6 @@ class RAGService:
             Source(
                 document_id = metadata['document_id'],
                 filename = metadata['filename'],
-                file_size = metadata['file_size'],
                 upload_time = datetime.fromtimestamp(metadata['upload_time']),
                 chunk_text = document
             ) for (document, metadata) in zip(documents, metadatas)]

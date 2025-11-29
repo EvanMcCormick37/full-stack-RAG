@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from app.config import settings
 from app.api.endpoints import query, documents
 from app.core.exceptions import RAGException
+from app.db import init_db
 import logging
 import os
 
@@ -26,13 +27,17 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
 # Setup Lifespan Manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting RAG API...")
+    logger.info("Starting RAG backend...")
     # Initialize directories
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs(settings.TEMP_DIR, exist_ok=True)
-    logger.info("API startup complete.")
+
+    # Initialize SQLite database
+    init_db()
+
+    logger.info("RAG startup complete.")
     yield
-    logger.info("Shutting down RAG API.")
+    logger.info("Shutting down RAG backend.")
 
 # Initialize FastAPI
 app = FastAPI(

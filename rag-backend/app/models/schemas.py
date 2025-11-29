@@ -19,8 +19,8 @@ class PromptStyle(str, Enum):
 class DocumentMetadata(BaseModel):
     document_id: str                # The document id
     filename: str                   # The name of the document
-    file_size: int                  # The size of the document in bytes
     upload_time: datetime           # The time which the file was uploaded
+    last_accessed: datetime         # The time in which 
     num_chunks: int                 # The number of chunks the document was split into
 
 
@@ -45,7 +45,6 @@ class QueryRequest(BaseModel):
 class Source(BaseModel):
     document_id: str                    # The document ID of the source document
     filename: str                       # The name of the source document
-    file_size: int                      # The size of the source file
     upload_time: datetime               # The time which the source file was added to the database
     chunk_text: str                     # The raw context text
 
@@ -58,7 +57,6 @@ class QueryResponse(BaseModel):
 # List Documents Schemas
 class DocumentListResponse(BaseModel):
     documents: Optional[List[DocumentMetadata]] = None  # The documents being listed
-    storage_space: int                                  # The total size of stored documents in bytes
     count: int                                          # The total number of uploaded documents
 
 

@@ -1,16 +1,17 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    # API Configuration
+    """
+    Backend configuration settings
+    """
+    # API
     API_TITLE: str = "RAG LLM API"
     API_VERSION: str = "./temp"
     API_PREFIX: str = "/api/v1.1"
     API_KEY_NAME: str = "API-Key"
     API_KEY: str
 
-    # Upload
-    UPLOAD_DIR: str = "./uploads"
-    TEMP_DIR: str = "./temp"
+    # Document Upload
     MAX_FILE_SIZE: int = 100 * 1024 * 1024
     ALLOWED_EXTENSIONS: set = {".pdf", ".docx", ".txt", ".md"}
 
@@ -19,18 +20,23 @@ class Settings(BaseSettings):
     CHUNK_OVERLAP: int = 200
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
 
-    # Vector database
-    COLLECTION_NAME: str = "documents"
+    # Vector
+    COLLECTION_NAME: str = "chunks"
     N_SEARCH_RESULTS: int = 25
-    CHROMADB_PERSIST_DIR: str = "./chroma"
     
-    # LLM Client Settings
+    # LLM Client
     GEMINI_API_KEY: str
     GEMINI_MODEL: str = "gemini-2.0-flash"
     LLM_MAX_RETRIES: int = 5
     LLM_MAX_DELAY: int = 60
     MAX_CACHE_SIZE:int = 100
     RETURN_CONTEXT: bool = False
+
+    #Directories and paths
+    UPLOAD_DIR: str = "./uploads"
+    TEMP_DIR: str = "./temp"
+    CHROMADB_PERSIST_DIR: str = "./chroma"
+    METADATA_DB_PATH: str = "./chroma/metadata.db"
 
     model_config = SettingsConfigDict(
         env_file = ".env"
