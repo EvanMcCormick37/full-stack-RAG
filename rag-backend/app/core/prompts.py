@@ -1,8 +1,3 @@
-class PromptStyle(str, Enum):
-    ANSWER = "answer"
-    ANALOGIZE = "analogize"
-    DISTRACT = "distract"
-
 PROMPT_STYLES = {
             "distract": """
             You are a yapper.

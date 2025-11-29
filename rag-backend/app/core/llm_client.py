@@ -5,7 +5,7 @@ import google.generativeai as genai
 import time
 import random
 from app.config import settings
-from app.models.schemas import PromptStyle, Source
+from app.models.schemas import Source
 from app.core.prompts import PROMPT_STYLES
 
 class LLMClient:
@@ -70,7 +70,7 @@ class LLMClient:
             The LLM's answer to the context prompt.
         '''
         context = ",\n".join([f"{src.chunk_text}\n(Source: {src.filename})" for src in sources])
-        prompt = PROMPT_STYLES[style].format(
+        prompt = PROMPT_STYLES['distract'].format(
             context = context,
             question = question
         )
