@@ -69,7 +69,7 @@ class LLMClient:
         ### Returns:
             The LLM's answer to the context prompt.
         '''
-        context = ",\n".join([f"{src.chunk_text}\n(Source: {src.filename})" for src in sources])
+        context = ",\n".join([f"{src.chunk_text} (src. {src.chunk_id})" for src in sources])
         prompt = PROMPT_STYLES['distract'].format(
             context = context,
             question = question

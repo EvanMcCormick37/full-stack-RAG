@@ -13,7 +13,7 @@ import os
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-api_key_header = APIKeyHeader(name=settings.API_KEY_NAME, auto_error="false")
+api_key_header = APIKeyHeader(name="API-Key", auto_error="false")
 
 async def get_api_key(api_key_header: str = Security(api_key_header)):
     if api_key_header == settings.API_KEY:
@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
 
 # Initialize FastAPI
 app = FastAPI(
-    title = settings.API_TITLE,
+    title = "RAG API",
     version = settings.API_VERSION,
     description = "RAG-Powered Q&A System",
     lifespan = lifespan

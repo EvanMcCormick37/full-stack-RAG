@@ -31,8 +31,8 @@ class QueryRequest(BaseModel):
 
 class Source(BaseModel):
     chunk_id: str                       # The chunk text ID
-    document_id: str                    # The document ID associated with the chunk text
     chunk_text: str                     # The raw chunk text
+    document_id: str                    # The document ID associated with the chunk text
 
 
 class QueryResponse(BaseModel):

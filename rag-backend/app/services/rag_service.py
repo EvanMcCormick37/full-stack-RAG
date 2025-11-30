@@ -169,20 +169,20 @@ class RAGService:
         Returns:
             A list of Sources generated from the QueryResult.
         '''
+        chunk_ids = chromadb_queryresult['ids'][0]
         chunk_texts = chromadb_queryresult['documents'][0]
         document_ids = [metadata['document_id'] for metadata in chromadb_queryresult['metadatas'][0]]
 
         sources = []
-        for chunk_text, document_id in zip(chunk_texts, document_ids):
+        for chunk_id, chunk_text, document_id in zip(chunk_ids, chunk_texts, document_ids):
             doc = self._metadata_service.get_document(document_id)
 
             if doc:
                 sources.append(
                     Source(
-                        document_id = document_id,
-                        filename = doc.filename,
-                        upload_time = doc.upload_time,
-                        chunk_text = chunk_text
+                        chunk_id=chunk_id,
+                        chunk_text = chunk_text,
+                        document_id = document_id
                     ))
 
         return sources
@@ -210,7 +210,7 @@ class RAGService:
 
     def maybe_auto_delete(self) -> None:
         """Delete least accessed documents if storage exceeds maximum storage threshold"""
-        while self._vector_database.count() > settings.MAX_VECTOR_CHUNKS:
+        while self._vector_database.count() > settings.MAX_CHUNKS:
             stale_doc = self._metadata_service.get_most_stale_document()
             self.delete_document(stale_doc.document_id)
     

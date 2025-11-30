@@ -14,7 +14,10 @@ from app.main import app
 from app.config import settings
 
 # Auth headers required for all protected endpoints
-AUTH_HEADERS = {settings.API_KEY_NAME: settings.API_KEY}
+TEST_HEADERS = {
+    "API-Key": settings.API_KEY,
+    "Session-ID": "test-session-123"
+     }
 
 # Test session ID for document ownership
 TEST_SESSION_ID = "test-session-123"
@@ -24,7 +27,7 @@ client = TestClient(app)
 
 def get_headers(session_id: str = None) -> dict:
     """Build headers dict with auth and optional session ID"""
-    headers = AUTH_HEADERS.copy()
+    headers = TEST_HEADERS.copy()
     if session_id:
         headers["X-Session-ID"] = session_id
     return headers
@@ -65,7 +68,7 @@ class TestHealthChecks:
     def test_documents_health(self):
         response = client.get(
             f"{settings.API_PREFIX}/documents/health",
-            headers=AUTH_HEADERS
+            headers=TEST_HEADERS
         )
         assert response.status_code == 200
         assert response.json()["status"] == "operational"
@@ -73,7 +76,7 @@ class TestHealthChecks:
     def test_query_health(self):
         response = client.get(
             f"{settings.API_PREFIX}/query/health",
-            headers=AUTH_HEADERS
+            headers=TEST_HEADERS
         )
         assert response.status_code == 200
         assert response.json()["status"] == "operational"
@@ -93,7 +96,7 @@ class TestSecurity:
 
     def test_access_with_wrong_key(self):
         """Protected endpoint should reject requests with wrong API key"""
-        wrong_headers = {settings.API_KEY_NAME: "wrong_secret"}
+        wrong_headers = {"API-Key": "wrong_secret", "Session-ID":"73555"}
         response = client.get(
             f"{settings.API_PREFIX}/documents/",
             headers=wrong_headers
@@ -105,7 +108,7 @@ class TestSecurity:
         """Protected endpoint should accept requests with correct API key"""
         response = client.get(
             f"{settings.API_PREFIX}/documents/",
-            headers=AUTH_HEADERS
+            headers=TEST_HEADERS
         )
         assert response.status_code == 200
 
@@ -157,7 +160,7 @@ class TestDocumentEndpoints:
         """Test listing documents"""
         response = client.get(
             f"{settings.API_PREFIX}/documents/",
-            headers=AUTH_HEADERS
+            headers=TEST_HEADERS
         )
         assert response.status_code == 200
         
@@ -168,7 +171,7 @@ class TestDocumentEndpoints:
         """Test getting a document that doesn't exist"""
         response = client.get(
             f"{settings.API_PREFIX}/documents/fake_id_12345",
-            headers=AUTH_HEADERS
+            headers=TEST_HEADERS
         )
         assert response.status_code == 404
 
@@ -183,7 +186,7 @@ class TestDocumentEndpoints:
         # Get
         response = client.get(
             f"{settings.API_PREFIX}/documents/{document_id}",
-            headers=AUTH_HEADERS
+            headers=TEST_HEADERS
         )
         assert response.status_code == 200
         assert response.json()["document_id"] == document_id
@@ -223,7 +226,7 @@ class TestQueryEndpoint:
         response = client.post(
             f"{settings.API_PREFIX}/query/",
             json=query_data,
-            headers=AUTH_HEADERS
+            headers=TEST_HEADERS
         )
         assert response.status_code == 200
         
@@ -238,7 +241,7 @@ class TestQueryEndpoint:
         response = client.post(
             f"{settings.API_PREFIX}/query/",
             json=query_data,
-            headers=AUTH_HEADERS
+            headers=TEST_HEADERS
         )
         assert response.status_code == 200
         assert "answer" in response.json()
@@ -250,7 +253,7 @@ class TestQueryEndpoint:
         response = client.post(
             f"{settings.API_PREFIX}/query/",
             json=query_data,
-            headers=AUTH_HEADERS
+            headers=TEST_HEADERS
         )
         assert response.status_code == 200
         assert "answer" in response.json()
@@ -262,7 +265,7 @@ class TestQueryEndpoint:
         response = client.post(
             f"{settings.API_PREFIX}/query/",
             json=query_data,
-            headers=AUTH_HEADERS
+            headers=TEST_HEADERS
         )
         assert response.status_code == 422
 
@@ -273,7 +276,7 @@ class TestQueryEndpoint:
         response = client.post(
             f"{settings.API_PREFIX}/query/",
             json=query_data,
-            headers=AUTH_HEADERS
+            headers=TEST_HEADERS
         )
         assert response.status_code == 422
 
@@ -296,7 +299,7 @@ class TestEndToEndWorkflow:
         query_response = client.post(
             f"{settings.API_PREFIX}/query/",
             json=query_data,
-            headers=AUTH_HEADERS
+            headers=TEST_HEADERS
         )
         assert query_response.status_code == 200
         assert "quantum" in query_response.json()["answer"].lower()
@@ -309,7 +312,7 @@ class TestEndToEndWorkflow:
         # 4. Verify deletion
         get_response = client.get(
             f"{settings.API_PREFIX}/documents/{doc_id}",
-            headers=AUTH_HEADERS
+            headers=TEST_HEADERS
         )
         assert get_response.status_code == 404
 

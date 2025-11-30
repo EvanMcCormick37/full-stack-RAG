@@ -5,10 +5,8 @@ class Settings(BaseSettings):
     Backend configuration settings
     """
     # API
-    API_TITLE: str = "RAG LLM API"
     API_VERSION: str = "./temp"
     API_PREFIX: str = "/api/v1.1"
-    API_KEY_NAME: str = "API-Key"
     API_KEY: str
 
     # Document Upload
@@ -23,6 +21,7 @@ class Settings(BaseSettings):
     # Vector
     COLLECTION_NAME: str = "chunks"
     N_SEARCH_RESULTS: int = 25
+    MAX_CHUNKS: int = 100000
     
     # LLM Client
     GEMINI_API_KEY: str

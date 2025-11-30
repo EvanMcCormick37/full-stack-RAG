@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Query
+from fastapi import APIRouter, HTTPException, UploadFile, Header
 from datetime import datetime
 from typing import Optional
 import traceback
@@ -20,9 +20,9 @@ async def documents_health():
 
 @router.post("/", response_model = UploadResponse)
 def upload_document(
-    file: UploadFile,
-    session_id: Optional[str] = None
-):
+        file: UploadFile,
+        session_id: str = Header(alias="Session-ID")
+    ):
     '''
     Upload and process a document
 
