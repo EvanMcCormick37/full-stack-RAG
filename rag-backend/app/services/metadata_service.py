@@ -156,5 +156,6 @@ class MetadataService:
                 upload_time=record.upload_time,
                 last_accessed=record.last_accessed,
                 session_id=record.session_id,
-                num_chunks=record.num_chunks
+                num_chunks=record.num_chunks,
+                status=record.status
             ) if record else None

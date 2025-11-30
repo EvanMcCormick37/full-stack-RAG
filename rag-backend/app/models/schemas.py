@@ -12,13 +12,13 @@ class DocumentStatus(str, Enum):
 
 # Upload Schemas
 class DocumentMetadata(BaseModel):
-    document_id: str                # The document id
-    filename: str                   # The name of the document
-    upload_time: datetime           # The time which the file was uploaded
-    last_accessed: datetime         # The time in which the document was last accessed
-    session_id: str                 # The session ID in which the document was uploaded
-    num_chunks: int                 # The number of chunks the document was split into
-    status: DocumentStatus          # The upload status of the document
+    document_id: str                            # The document id
+    filename: str                               # The name of the document
+    upload_time: datetime                       # The time which the file was uploaded
+    last_accessed: Optional[datetime] = None    # The time in which the document was last accessed
+    session_id: str                             # The session ID in which the document was uploaded
+    num_chunks: int                             # The number of chunks the document was split into
+    status: DocumentStatus                      # The upload status of the document
 
 
 class UploadResponse(BaseModel):

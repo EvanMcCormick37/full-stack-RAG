@@ -46,7 +46,7 @@ class RAGService:
         file_path: str,
         upload_time: datetime,
         session_id: str
-    ) -> int:
+    ):
         '''
         Processes a single document. Stores chunks, embeddings in ChromaDB, document metadata in SQLite.
 
@@ -56,9 +56,6 @@ class RAGService:
             - file_path - Path to document file
             - upload_time - The time which the document was uploaded
             - session_id - The session in which the document was uploaded, useful for determining user access and deletion privileges
-
-        Returns:
-            The number of chunks the document was chunked into.
         '''
         text = document_service.extract_text(file_path)
         chunks = document_service.chunk_text(text)
@@ -83,13 +80,11 @@ class RAGService:
                 filename=filename,
                 upload_time=upload_time,
                 session_id=session_id,
-                num_chunks=len(chunks),
-                status="processing"
+                num_chunks=len(chunks)
             )
             # Check for possible auto-deletion of old documents if ChromaDB has grown too large
             self.maybe_auto_delete()
 
-            return len(chunks)
         except Exception as e:
             raise VectorStoreError(f"Failed to add document to one of the databases (SQLite document-metadata or ChromaDB chunk storage): {str(e)}")
     
@@ -131,15 +126,19 @@ class RAGService:
         )
     
 
-    def delete_document(self, document_id: str) -> None:
+    def delete_document(self, document_id: str, session_id: Optional[str] = None) -> None:
         '''
         Delete a document from the vector store.
 
         Params:
             - document_id - The ID of the document to be deleted.
         '''
-        self._vector_database.delete(where={"document_id": document_id})
-        self._metadata_service.delete_document(document_id)
+        if (session_id is None) or (self._metadata_service.get_document(document_id).session_id == session_id):
+            self._vector_database.delete(where={"document_id": document_id})
+            self._metadata_service.delete_document(document_id)
+            return
+        else:
+            raise VectorStoreError(f"You do not own the document you are trying to delete ({document_id}) ! You do not have permission to delete documents not created within your session.")
     
 
     def delete_all_documents(self, session_id: Optional[str]) -> None:

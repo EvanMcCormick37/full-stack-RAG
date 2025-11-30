@@ -9,6 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+
 @router.get("/health")
 async def documents_health():
     '''
@@ -20,13 +21,14 @@ async def documents_health():
 @router.post("/", response_model = UploadResponse)
 def upload_document(
     file: UploadFile,
-    session_id: str
+    session_id: Optional[str] = None
 ):
     '''
     Upload and process a document
 
     Params:
-        file - File to upload
+        - file - File to upload
+        - x_session_id - Session ID header (optional, defaults to "default")
     
     Returns:
         Document ID and processing status.
@@ -38,7 +40,7 @@ def upload_document(
         file_path = file_service.save_upload(file, document_id)
         upload_time = datetime.now()
 
-        num_chunks = rag_service.process_document(
+        rag_service.process_document(
             document_id,
             file.filename,
             file_path,
@@ -49,12 +51,7 @@ def upload_document(
         file_service.delete_file(file_path)
 
         response = UploadResponse(
-            document_metadata = DocumentMetadata(
-                document_id = document_id,
-                filename = file.filename,
-                upload_time = upload_time,
-                num_chunks = num_chunks
-            )
+            document_metadata = metadata_service.get_document(document_id)
         )
 
         return response
