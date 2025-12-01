@@ -46,19 +46,24 @@ export const MessageList = ({ messageHistory }) => {
                             <div className={`text-[10px] mt-1 opacity-60 ${msg.role === 'user' ? 'text-blue-100' : 'text-zinc-400'} text-right`}>
                                 {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </div>
+                            
+                            {msg.role === 'llm' && msg.style !== 'ANSWER' && msg.documents && msg.documents.length > 0 && (
+                                <details className="mt-2 group">
+                                    <summary className="text-xs text-zinc-500 cursor-pointer hover:text-zinc-300 transition-colors list-none [&::-webkit-details-marker]:hidden select-none">
+                                        <span className="border-b border-dashed border-zinc-600 hover:border-zinc-400">
+                                            Distracted by
+                                        </span>
+                                    </summary>
+                                    <ul className="mt-2 space-y-1 pl-3 border-l border-zinc-700">
+                                        {msg.documents.map((doc, i) => (
+                                            <li key={i} className="text-xs text-zinc-500">
+                                                {doc.filename}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </details>
+                            )}
                         </div>
-                        {msg.role === 'llm' && (
-                            <details className="mt-2 text-xs text-zinc-500">
-                                <ul className="mt-1 ml-4 space-y-1">
-                                    Distracted by
-                                    {msg.documents.map((doc, i) => (
-                                        <li key={i} className="text-zinc-600">
-                                            • {doc.filename}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </details>
-                        )}
                     </div>
                 </div>
             ))}
