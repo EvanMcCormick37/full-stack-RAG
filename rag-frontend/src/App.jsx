@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChatInterface, DocumentsSidebar } from './components';
 import { Menu, X } from 'lucide-react'; // Assuming you have lucide-react installed
+import { Analytics } from "@vercel/analytics/next"
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -39,6 +40,8 @@ function App() {
 
         <ChatInterface />
       </main>
+      {/* Vercel Analytics tracking */}
+      <Analytics/>
     </div>
   );
 }
