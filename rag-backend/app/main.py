@@ -17,7 +17,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-api_key_header = APIKeyHeader(name="API-Key", auto_error=False)
+api_key_header = APIKeyHeader(name="Api-Key", auto_error=False)
 
 async def get_api_key(api_key_header: str = Security(api_key_header)) -> str:
     if api_key_header == settings.API_KEY:
@@ -43,7 +43,6 @@ async def lifespan(app: FastAPI):
     yield
     logger.info("Shutting down RAG backend.")
 
-    await llm_client.close()
     file_service.clean_up()
 
 # Initialize FastAPI

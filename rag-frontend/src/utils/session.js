@@ -1,8 +1,8 @@
 export const sessionId = () => {
-    let sessionId = localStorage.getItem('Session-ID');
+    let sessionId = localStorage.getItem('Session-Id');
     if (!sessionId) {
         sessionId = crypto.randomUUID();
-        localStorage.setItem('Session-ID', sessionId)
+        localStorage.setItem('Session-Id', sessionId)
     }
     return sessionId
 };

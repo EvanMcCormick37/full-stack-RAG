@@ -8,8 +8,8 @@ const apiClient = axios.create({
     baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
-        'API-Key': API_KEY,
-        'Session-ID': sessionId()
+        'Api-Key': API_KEY,
+        'Session-Id': sessionId()
     }
 });
 
@@ -20,21 +20,21 @@ export const ragApi = {
         const formData = new FormData();
         formData.append('file', file);
         return apiClient.post(
-            '/api/v1.1/documents/',
+            '/api/v1.2/documents/',
             formData,
             {
-                headers: {'Content-Type': 'multipart/form-data'}
+                headers: {'Content-Type': 'multipart/form-data', ...apiClient.headers}
             }
         );
     },
 
-    listDocuments: () => apiClient.get('/api/v1.1/documents/'),
+    listDocuments: () => apiClient.get('/api/v1.2/documents/'),
 
-    getDocument: (documentId) => apiClient.get(`/api/v1.1/documents/${documentId}`),
+    getDocument: (documentId) => apiClient.get(`/api/v1.2/documents/${documentId}`),
 
-    deleteAllDocuments: (confirmed=true) => apiClient.delete('/api/v1.1/documents/'),
+    deleteAllDocuments: (confirmed=true) => apiClient.delete('/api/v1.2/documents/'),
 
-    deleteDocument: (documentId) => apiClient.delete(`/api/v1.1/documents/${documentId}`),
+    deleteDocument: (documentId) => apiClient.delete(`/api/v1.2/documents/${documentId}`),
 
-    query: (queryRequest) => apiClient.post('/api/v1.1/query/', queryRequest)
+    query: (queryRequest) => apiClient.post('/api/v1.2/query/', queryRequest)
 };

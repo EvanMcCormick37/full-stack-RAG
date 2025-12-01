@@ -15,8 +15,8 @@ from app.config import settings
 
 # Auth headers required for all protected endpoints
 TEST_HEADERS = {
-    "API-Key": settings.API_KEY,
-    "Session-ID": "test-session-123"
+    "Api-Key": settings.API_KEY,
+    "Session-Id": "test-session-123"
      }
 
 # Test session ID for document ownership

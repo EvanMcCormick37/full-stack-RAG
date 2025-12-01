@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     """
     # API
     API_VERSION: str = "./temp"
-    API_PREFIX: str = "/api/v1.1"
+    API_PREFIX: str = "/api/v1.2"
     API_KEY: str
 
     # Document Upload
