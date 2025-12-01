@@ -52,7 +52,7 @@ export default async function handler(req, res) {
 
     // Build headers
     const headers = {};
-    const allowedHeaders = ['content-type', 'api-key', 'authorization'];
+    const allowedHeaders = ['content-type', 'api-key', 'authorization', 'session-id'];
     
     allowedHeaders.forEach(header => {
         if (req.headers[header]) {
