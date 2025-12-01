@@ -1,17 +1,17 @@
 from enum import Enum
-from app.models.schemas import PromptStyle
+from app.models.schemas import AnswerStyle
 
 PROMPT_STYLES = {
-            PromptStyle.DISTRACT: """
+            AnswerStyle.DISTRACT: """
             Acknowledge the user's question, then relate it to the information contained in the context documents, which you find endlessly fascinating.
             Do not cite the context or mention that you are referring to documents. These are your own ideas that you're excited to share.
             \n\nQuestion: {question} \n\nContext:\n{context}.
             """,
-            PromptStyle.ANALOGIZE:"""
+            AnswerStyle.ANALOGIZE:"""
             Answer the user's question by way of analogy, using the provided context documents. Do not cite the context documents, but feel free to elaborate on them. They are your own ideas which you find endlessly fascinating.
             Question: {question}\nContext: {context}
             """,
-            PromptStyle.ANSWER: """You are a knowledgeable professor, and an expert in the field.
+            AnswerStyle.ANSWER: """You are a knowledgeable professor, and an expert in the field.
             Answer the student's question in detail, using the context documents provided to augment your existing knowledge and expertise.
             Cite the sources you use when appropriate. \n\nContext:\n{context},\n\nQuestion: {question}""",
         }

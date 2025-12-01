@@ -233,6 +233,7 @@ class TestQueryEndpoint:
         data = response.json()
         assert "answer" in data
         assert len(data["answer"]) > 0
+        return data["answer"]
     
     def test_query_about_ai(self):
         """Test query about AI content"""
@@ -279,6 +280,15 @@ class TestQueryEndpoint:
             headers=TEST_HEADERS
         )
         assert response.status_code == 422
+
+    
+    def test_repeat_queries(self):
+        """Test repeat queries for proper caching behavior"""
+        a1 = self.test_simple_query()
+        a2 = self.test_simple_query()
+        a3 = self.test_simple_query()
+        assert a1 == a2
+        assert a2 == a3
 
 
 # =============================================================================

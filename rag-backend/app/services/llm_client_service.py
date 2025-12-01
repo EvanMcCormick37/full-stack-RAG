@@ -6,7 +6,7 @@ import time
 import random
 from app.config import settings
 from app.models.schemas import Source
-from app.core.prompts import PROMPT_STYLES, ROUTING_PROMPT, PromptStyle
+from app.core.prompts import PROMPT_STYLES, ROUTING_PROMPT, AnswerStyle
 
 
 class LLMClient:
@@ -38,18 +38,18 @@ class LLMClient:
                 time.sleep(sleep_time)
 
 
-    def _route_prompt(self, question: str, context: str) -> PromptStyle:
+    def _route_prompt(self, question: str, context: str) -> AnswerStyle:
         """Determine the best prompt style for the given question and context."""
         routing_prompt = ROUTING_PROMPT.format(question=question, context=context)
         response = self._call_with_exponential_backoff(routing_prompt).strip().upper()
         
-        # Map routing response to PromptStyle
+        # Map routing response to AnswerStyle
         routing_map = {
-            "ANSWER": PromptStyle.ANSWER,
-            "ANALOGIZE": PromptStyle.ANALOGIZE,
-            "UNRELATED": PromptStyle.DISTRACT,
+            "ANSWER": AnswerStyle.ANSWER,
+            "ANALOGIZE": AnswerStyle.ANALOGIZE,
+            "UNRELATED": AnswerStyle.DISTRACT,
         }
-        return routing_map.get(response, PromptStyle.DISTRACT)  # Default to ANSWER
+        return routing_map.get(response, AnswerStyle.DISTRACT)  # Default to ANSWER
 
 
     def answer(self, question: str, sources: List[Source]) -> str:
@@ -65,17 +65,17 @@ class LLMClient:
         """
         context = ",\n".join([f"{src.chunk_text} (src. {src.document_id})" for src in sources])
         
+        # Check cache
+        prompt_hash = hashlib.sha256(",".join([question,context]).encode('utf-8')).hexdigest()
+        if prompt_hash in self._cache:
+            answer = self._cache[prompt_hash]
+            return answer, AnswerStyle.CACHED
         # Route to determine best prompt style
         prompt_style = self._route_prompt(question, context)
         
         # Build final prompt with selected style
         prompt = PROMPT_STYLES[prompt_style].format(context=context, question=question)
         self._validate_prompt(prompt)
-
-        # Check cache
-        prompt_hash = hashlib.sha256(prompt.encode('utf-8')).hexdigest()
-        if prompt_hash in self._cache:
-            return self._cache[prompt_hash]
 
         # Generate answer
         answer = self._call_with_exponential_backoff(prompt)

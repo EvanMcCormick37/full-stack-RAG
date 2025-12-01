@@ -10,11 +10,12 @@ class DocumentStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
 
-class PromptStyle(str, Enum):
+class AnswerStyle(str, Enum):
     """Enum class capturing final prompt styles."""
     DISTRACT = "UNRELATED"
     ANALOGIZE = "ANALOGIZE"
     ANSWER = "ANSWER"
+    CACHED = "CACHED"
 
 # Upload Schemas
 class DocumentMetadata(BaseModel):
@@ -43,7 +44,7 @@ class Source(BaseModel):
 
 class QueryResponse(BaseModel):
     answer: str                                 # The answer returned by the LLM client
-    style:  PromptStyle                         # The style in which the LLM chose to answer the question
+    style:  AnswerStyle                         # The style in which the LLM chose to answer the question
     sources: List[Source]                       # The sources retrieved by the RAG model
     document_metadatas: List[DocumentMetadata]  # The document sources used by the RAG model for this query
 
