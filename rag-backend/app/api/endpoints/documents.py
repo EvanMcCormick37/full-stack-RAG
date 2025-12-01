@@ -58,7 +58,7 @@ async def upload_document(
 
 
 @router.get("/", response_model = DocumentListResponse)
-async def list_documents(session_id: str = Header(..., alias="Session-Id")):
+async def list_documents():
     '''
     List all uploaded documents
 
@@ -66,7 +66,7 @@ async def list_documents(session_id: str = Header(..., alias="Session-Id")):
         DocumentList
     '''
     try:
-        return await metadata_service.list_documents(session_id)
+        return await metadata_service.list_documents()
         
     except Exception as e:
         logger.error(f"Error listing documents: {str(e)}")

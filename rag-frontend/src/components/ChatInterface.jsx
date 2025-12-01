@@ -143,11 +143,7 @@ const ChatInterface = () => {
     const { messageHistory, loading, error, setError, query, clearMessageHistory } = useQuery();
 
     const handleQuery = (userQuestion) => {
-        query({
-            question: userQuestion,
-            style: 'distracted',
-            return_context: false
-        });
+        query({question: userQuestion});
     };
 
     useEffect(() => {

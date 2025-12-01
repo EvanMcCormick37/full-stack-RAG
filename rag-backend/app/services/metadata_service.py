@@ -104,7 +104,7 @@ class MetadataService:
 
     def _get_all_documents_sync(
         self, 
-        session_id: Optional[str]
+        session_id: Optional[str] = None
     ) -> List[DocumentMetadata]:
         """Synchronous implementation of get_all_documents."""
         with Session(engine) as session:
@@ -251,7 +251,7 @@ class MetadataService:
 
     async def list_documents(
         self, 
-        session_id: Optional[str]
+        session_id: Optional[str] = None
     ) -> DocumentListResponse:
         """Get a list of documents with count."""
         docs = await self.get_all_documents(session_id)
@@ -263,7 +263,7 @@ class MetadataService:
 
     @staticmethod
     def _to_metadata(
-        record: Optional[DocumentRecord]
+        record: Optional[DocumentRecord] = None
     ) -> Optional[DocumentMetadata]:
         """Convert DocumentRecord to DocumentMetadata."""
         if record is None:
