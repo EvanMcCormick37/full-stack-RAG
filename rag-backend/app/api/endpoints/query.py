@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.post("/", response_model = QueryResponse)
-def query(request: QueryRequest):
+async def query(request: QueryRequest):
     """
     Query the RAG model
 
@@ -16,7 +16,7 @@ def query(request: QueryRequest):
         request - A QueryRequest with the question, prompt-style, optional metadata filter, n_results, and return_context.
     """
     try:
-        response = rag_service.query(request.question)
+        response = await rag_service.query(request.question)
         return response
     except Exception as e:
         logger.error(f"Error querying the RAG pipeline. {str(e)}")

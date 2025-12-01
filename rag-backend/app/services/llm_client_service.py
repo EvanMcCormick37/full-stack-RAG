@@ -15,12 +15,14 @@ class LLMClient:
         self._model = genai.GenerativeModel(settings.GEMINI_MODEL)
         self._cache: OrderedDict[str, str] = OrderedDict()
 
+
     def _validate_prompt(self, prompt: str) -> None:
         """Validate the input prompt."""
         if not prompt or not prompt.strip():
             raise ValueError("Prompt cannot be empty")
         if len(prompt) > 900_000:
             raise ValueError("Prompt exceeds maximum length")
+
 
     def _call_with_exponential_backoff(self, prompt: str) -> str:
         """Call the Gemini API with exponential backoff on rate limit errors."""
@@ -35,6 +37,7 @@ class LLMClient:
                 sleep_time = delay * (2 ** attempt) + random.uniform(0, 1)
                 time.sleep(sleep_time)
 
+
     def _route_prompt(self, question: str, context: str) -> PromptStyle:
         """Determine the best prompt style for the given question and context."""
         routing_prompt = ROUTING_PROMPT.format(question=question, context=context)
@@ -47,6 +50,7 @@ class LLMClient:
             "UNRELATED": PromptStyle.DISTRACT,
         }
         return routing_map.get(response, PromptStyle.DISTRACT)  # Default to ANSWER
+
 
     def answer(self, question: str, sources: List[Source]) -> str:
         """

@@ -92,7 +92,7 @@ class TestSecurity:
         """Protected endpoint should reject requests without API key"""
         response = client.get(f"{settings.API_PREFIX}/documents/")
         assert response.status_code == 403
-        assert response.json()["detail"] == "Not authenticated"
+        assert response.json()["detail"] == "Could not validate credentials"
 
     def test_access_with_wrong_key(self):
         """Protected endpoint should reject requests with wrong API key"""

@@ -19,7 +19,7 @@ async def documents_health():
 
 
 @router.post("/", response_model = UploadResponse)
-def upload_document(
+async def upload_document(
         file: UploadFile,
         session_id: str = Header(alias="Session-ID")
     ):
@@ -28,19 +28,19 @@ def upload_document(
 
     Params:
         - file - File to upload
-        - x_session_id - Session ID header (optional, defaults to "default")
+        - session_id - Session ID header
     
     Returns:
         Document ID and processing status.
     '''
     try:
-        file_service.validate_file(file)
+        await file_service.validate_file(file)
 
         document_id = file_service.generate_document_id(file.filename)
-        file_path = file_service.save_upload(file, document_id)
+        file_path = await file_service.save_upload(file, document_id)
         upload_time = datetime.now()
 
-        rag_service.process_document(
+        await rag_service.process_document(
             document_id,
             file.filename,
             file_path,
@@ -48,13 +48,8 @@ def upload_document(
             session_id
         )
 
-        file_service.delete_file(file_path)
-
-        response = UploadResponse(
-            document_metadata = metadata_service.get_document(document_id)
-        )
-
-        return response
+        await file_service.delete_file(file_path)
+        return UploadResponse(document_metadata = await metadata_service.get_document(document_id))
     
     except Exception as e:
         logger.error(f"Upload error: {str(e)}")
@@ -63,7 +58,7 @@ def upload_document(
 
 
 @router.get("/", response_model = DocumentListResponse)
-def list_documents(session_id: Optional[str] = None):
+async def list_documents(session_id: Optional[str] = None):
     '''
     List all uploaded documents
 
@@ -71,7 +66,7 @@ def list_documents(session_id: Optional[str] = None):
         DocumentList
     '''
     try:
-        return metadata_service.list_documents(session_id)
+        return await metadata_service.list_documents(session_id)
         
     except Exception as e:
         logger.error(f"Error listing documents: {str(e)}")
@@ -80,7 +75,7 @@ def list_documents(session_id: Optional[str] = None):
 
 
 @router.get("/{document_id}", response_model=DocumentMetadata)
-def get_document(document_id: str):
+async def get_document(document_id: str):
     """
     Get details of a specific document
     
@@ -91,7 +86,7 @@ def get_document(document_id: str):
         DocumentMetadata for the matching document if it exists.
     """
     try:
-        document = metadata_service.get_document(document_id)
+        document = await metadata_service.get_document(document_id)
         
         if not document:
             raise HTTPException(
@@ -110,7 +105,7 @@ def get_document(document_id: str):
 
 
 @router.delete("/", response_model=DeleteResponse)
-def delete_documents(session_id: Optional[str] = None):
+async def delete_documents(session_id: Optional[str] = None):
     """
     Delete all documents from the vector database
     
@@ -118,7 +113,7 @@ def delete_documents(session_id: Optional[str] = None):
         bool indicating whether deletion was successful
     """
     try:
-        rag_service.delete_all_documents(session_id)
+        await rag_service.delete_all_documents(session_id)
         return DeleteResponse(deleted=True)
     except HTTPException:
         raise
@@ -129,7 +124,7 @@ def delete_documents(session_id: Optional[str] = None):
 
 
 @router.delete("/{document_id}", response_model=DeleteResponse)
-def delete_document(document_id: str, session_id: Optional[str] = None):
+async def delete_document(document_id: str, session_id: Optional[str] = None):
     """
     Delete a document and remove it from the index
 
@@ -141,7 +136,7 @@ def delete_document(document_id: str, session_id: Optional[str] = None):
     """
     try:
         # Get document info
-        rag_service.delete_document(document_id, session_id)
+        await rag_service.delete_document(document_id, session_id)
         return DeleteResponse(deleted=True)
         
     except HTTPException:

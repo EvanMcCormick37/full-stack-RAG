@@ -6,16 +6,20 @@ from fastapi.responses import JSONResponse
 from app.config import settings
 from app.api.endpoints import query, documents
 from app.core.exceptions import RAGException
+from app.services import file_service, llm_client
 import logging
 import os
 
 # Setup logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
-api_key_header = APIKeyHeader(name="API-Key", auto_error="false")
+api_key_header = APIKeyHeader(name="API-Key", auto_error=False)
 
-async def get_api_key(api_key_header: str = Security(api_key_header)):
+async def get_api_key(api_key_header: str = Security(api_key_header)) -> str:
     if api_key_header == settings.API_KEY:
         return api_key_header
     raise HTTPException(
@@ -26,15 +30,21 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
 # Setup Lifespan Manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Async application lifespan manager.
+
+    Handles startup initialization and graceful shutdown.
+    """
     logger.info("Starting RAG backend...")
     # Initialize directories
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    os.makedirs(settings.TEMP_DIR, exist_ok=True)
-
+    await file_service.ensure_directories()
 
     logger.info("RAG startup complete.")
     yield
     logger.info("Shutting down RAG backend.")
+
+    await llm_client.close()
+    file_service.clean_up()
 
 # Initialize FastAPI
 app = FastAPI(
@@ -47,8 +57,9 @@ app = FastAPI(
 
 # CORS middleware - STRICT
 origins = [
-    "http://localhost:5173", #Dev mode
-    "https://full-stack-rag-neon.vercel.app/"
+        "http://localhost:5173",  # Vite dev
+        "http://localhost:3000",  # React dev
+        "https://full-stack-rag-neon.vercel.app",
 ]
 
 app.add_middleware(
