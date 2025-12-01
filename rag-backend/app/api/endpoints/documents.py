@@ -58,7 +58,7 @@ async def upload_document(
 
 
 @router.get("/", response_model = DocumentListResponse)
-async def list_documents(session_id: Optional[str] = None):
+async def list_documents(session_id: str = Header(alias="Session-ID")):
     '''
     List all uploaded documents
 
@@ -105,7 +105,7 @@ async def get_document(document_id: str):
 
 
 @router.delete("/", response_model=DeleteResponse)
-async def delete_documents(session_id: Optional[str] = None):
+async def delete_documents(session_id: str = Header(alias="Session-ID")):
     """
     Delete all documents from the vector database
     
@@ -124,7 +124,7 @@ async def delete_documents(session_id: Optional[str] = None):
 
 
 @router.delete("/{document_id}", response_model=DeleteResponse)
-async def delete_document(document_id: str, session_id: Optional[str] = None):
+async def delete_document(document_id: str, session_id: str = Header(alias="Session-ID")):
     """
     Delete a document and remove it from the index
 

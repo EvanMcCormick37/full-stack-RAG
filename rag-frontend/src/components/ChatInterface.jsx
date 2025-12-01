@@ -47,6 +47,18 @@ export const MessageList = ({ messageHistory }) => {
                                 {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </div>
                         </div>
+                        {msg.role === 'llm' && msg.style == "UNRELATED" && (
+                            <details className="mt-2 text-xs text-zinc-500">
+                                <ul className="mt-1 ml-4 space-y-1">
+                                    Distracted by
+                                    {msg.documents.map((doc, i) => (
+                                        <li key={i} className="text-zinc-600">
+                                            • {doc.filename}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </details>
+                        )}
                     </div>
                 </div>
             ))}

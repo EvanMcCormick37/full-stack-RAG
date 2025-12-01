@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useDocuments } from "../hooks/ragApiHooks";
 import { CloudUpload, FileText, Trash2, HardDrive } from "lucide-react";
+import { sessionId } from "../utils/session";
 
 const UploadDocumentWidget = ({ onUploadDocument, isLoading, error }) => {
     const [selectedFile, setSelectedFile] = useState(null);
@@ -94,21 +95,22 @@ const DocumentCard = ({ document, onDeleteDocument, loading }) => {
                         {document.filename}
                     </h4>
                     <div className="flex items-center gap-2 text-[10px] text-zinc-500">
-                        <span>{document.file_size} KB</span>
                         <span className="w-1 h-1 rounded-full bg-zinc-600"></span>
                         <span>{document.num_chunks} chunks</span>
                     </div>
                 </div>
             </div>
 
-            <button
-                className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-md opacity-0 group-hover:opacity-100 transition-all"
-                onClick={() => onDeleteDocument(document.document_id)}
-                disabled={loading}
-                title="Delete Document"
-            >
-                <Trash2 size={14} />
-            </button>
+            {document.session_id == sessionId() && (
+                <button
+                    className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-md opacity-0 group-hover:opacity-100 transition-all"
+                    onClick={() => onDeleteDocument(document.document_id)}
+                    disabled={loading}
+                    title="Delete Document"
+                >
+                    <Trash2 size={14} />
+                </button>
+            )}
         </div>
     );
 };
@@ -165,15 +167,6 @@ const DocumentsSidebar = () => {
                         <span className="overflow-wrap">{error}</span>
                         <button onClick={() => setError(null)}>&times;</button>
                     </div>
-                )}
-                
-                {documents.length > 0 && (
-                    <button 
-                        className="w-full py-2 text-xs text-red-400 hover:bg-red-400/5 rounded-lg transition-colors mb-2" 
-                        onClick={clearDocuments}
-                    >
-                        Clear All Documents
-                    </button>
                 )}
             </div>
 

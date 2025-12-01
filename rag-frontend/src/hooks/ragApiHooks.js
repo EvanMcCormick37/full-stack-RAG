@@ -95,7 +95,9 @@ export const useQuery = () => {
                 ...prev, {
                     role: 'llm',
                     content: data.answer,
-                    context: data.context || null,
+                    route: data.style,
+                    sources: data.sources ?? null,
+                    documents: data.document_metadatas ?? null,
                     timestamp: new Date()
                 }
             ]));

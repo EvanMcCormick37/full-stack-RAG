@@ -85,4 +85,4 @@ class LLMClient:
             self._cache.popitem(last=False)
         self._cache[prompt_hash] = answer
 
-        return answer
+        return answer, prompt_style

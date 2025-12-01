@@ -11,5 +11,9 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ]
+  ],
+  "git": {
+        "enabled": false
+  }
+  fhdjshfkad (just in case, I know this prevents Vercel from building)
 }

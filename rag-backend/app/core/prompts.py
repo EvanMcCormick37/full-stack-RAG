@@ -1,11 +1,5 @@
 from enum import Enum
-
-class PromptStyle(str, Enum):
-    """Enum class capturing final prompt styles."""
-    DISTRACT = "UNRELATED"
-    ANALOGIZE = "ANALOGIZE"
-    ANSWER = "ANSWER"
-
+from app.models.schemas import PromptStyle
 
 PROMPT_STYLES = {
             PromptStyle.DISTRACT: """

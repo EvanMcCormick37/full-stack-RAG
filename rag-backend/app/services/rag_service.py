@@ -127,10 +127,11 @@ class RAGService:
         sources = await self._convert_chromadb_queryresult_to_sources(chromadb_queryresult)
         documents = await self._update_access_times(sources)
 
-        answer = self._llm_client.answer(question, sources)
+        answer, style = self._llm_client.answer(question, sources)
 
         return QueryResponse(
             answer = answer,
+            style = style,
             sources = sources,
             document_metadatas = documents
         )
