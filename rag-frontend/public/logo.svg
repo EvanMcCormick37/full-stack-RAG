@@ -6,28 +6,19 @@
     </filter>
   </defs>
   
-  <!-- Left ear/handle -->
-  <polygon points="15,35 35,25 35,75 15,65" fill="#4A90D9" stroke="#000000" stroke-width="2.5" stroke-linejoin="round"/>
-  
-  <!-- Right ear/handle -->
-  <polygon points="185,35 165,25 165,75 185,65" fill="#4A90D9" stroke="#000000" stroke-width="2.5" stroke-linejoin="round"/>
-  
   <!-- Main body -->
-  <rect x="30" y="15" width="140" height="80" rx="18" ry="18" fill="#4A90D9" stroke="#000000" stroke-width="3" filter="url(#shadow)"/>
-  
-  <!-- Top nub (wider) -->
-  <rect x="85" y="8" width="30" height="12" rx="4" fill="#4A90D9" stroke="#000000" stroke-width="2"/>
+  <rect x="30" y="5" width="140" height="100" rx="18" ry="18" fill="none" stroke="#000000" stroke-width="3" filter="url(#shadow)"/>
   
   <!-- Left eye white -->
-  <ellipse cx="70" cy="55" rx="24" ry="26" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+  <ellipse cx="55" cy="55" rx="24" ry="26" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
   
   <!-- Right eye white -->
-  <ellipse cx="130" cy="55" rx="24" ry="26" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+  <ellipse cx="145" cy="55" rx="24" ry="26" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
   
   <!-- Left pupil (looking left, tangent to outer edge) -->
-  <ellipse cx="56" cy="55" rx="10" ry="12" fill="#000000"/>
+  <ellipse cx="41" cy="55" rx="10" ry="12" fill="#000000"/>
   
   <!-- Right pupil (looking right, tangent to outer edge) -->
-  <ellipse cx="144" cy="55" rx="10" ry="12" fill="#000000"/>
+  <ellipse cx="159" cy="55" rx="10" ry="12" fill="#000000"/>
   
 </svg>
