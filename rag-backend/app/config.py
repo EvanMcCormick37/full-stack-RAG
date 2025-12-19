@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     
     # LLM Client
     GEMINI_API_KEY: str
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-2.5-flash"
     LLM_MAX_RETRIES: int = 5
     LLM_MAX_DELAY: int = 60
     MAX_CACHE_SIZE:int = 100
